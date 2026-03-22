@@ -34,7 +34,7 @@ content_of_file = response.text
 new_content = content_of_file.replace("Andrew", "Stephen")
 
 # update the file in the repository with the new content
-gitHubResponse = repo.update_file(file_info.path, 
+github_response = repo.update_file(file_info.path, 
                                   "updated by program to replace Andrew with Stephen", 
                                   new_content, 
                                   file_info.sha
