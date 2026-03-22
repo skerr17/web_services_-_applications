@@ -1,0 +1,50 @@
+[
+    {
+        "name": ".gitignore",
+        "path": ".gitignore",
+        "sha": "b7faf403d915ca307532bb0eb9cceaf0214e8e5b",
+        "size": 4688,
+        "url": "https://api.github.com/repos/skerr17/private_repo/contents/.gitignore?ref=main",
+        "html_url": "https://github.com/skerr17/private_repo/blob/main/.gitignore",
+        "git_url": "https://api.github.com/repos/skerr17/private_repo/git/blobs/b7faf403d915ca307532bb0eb9cceaf0214e8e5b",
+        "download_url": "https://raw.githubusercontent.com/skerr17/private_repo/main/.gitignore?token=BOI3VTZUKM7HNIYKBCLUOXDJYADXRAA",
+        "type": "file",
+        "_links": {
+            "self": "https://api.github.com/repos/skerr17/private_repo/contents/.gitignore?ref=main",
+            "git": "https://api.github.com/repos/skerr17/private_repo/git/blobs/b7faf403d915ca307532bb0eb9cceaf0214e8e5b",
+            "html": "https://github.com/skerr17/private_repo/blob/main/.gitignore"
+        }
+    },
+    {
+        "name": "test.py",
+        "path": "test.py",
+        "sha": "e69de29bb2d1d6434b8b29ae775ad8c2e48c5391",
+        "size": 0,
+        "url": "https://api.github.com/repos/skerr17/private_repo/contents/test.py?ref=main",
+        "html_url": "https://github.com/skerr17/private_repo/blob/main/test.py",
+        "git_url": "https://api.github.com/repos/skerr17/private_repo/git/blobs/e69de29bb2d1d6434b8b29ae775ad8c2e48c5391",
+        "download_url": "https://raw.githubusercontent.com/skerr17/private_repo/main/test.py?token=BOI3VT5DONBOI2ZRSI52JNTJYADXRAA",
+        "type": "file",
+        "_links": {
+            "self": "https://api.github.com/repos/skerr17/private_repo/contents/test.py?ref=main",
+            "git": "https://api.github.com/repos/skerr17/private_repo/git/blobs/e69de29bb2d1d6434b8b29ae775ad8c2e48c5391",
+            "html": "https://github.com/skerr17/private_repo/blob/main/test.py"
+        }
+    },
+    {
+        "name": "test.txt",
+        "path": "test.txt",
+        "sha": "e69de29bb2d1d6434b8b29ae775ad8c2e48c5391",
+        "size": 0,
+        "url": "https://api.github.com/repos/skerr17/private_repo/contents/test.txt?ref=main",
+        "html_url": "https://github.com/skerr17/private_repo/blob/main/test.txt",
+        "git_url": "https://api.github.com/repos/skerr17/private_repo/git/blobs/e69de29bb2d1d6434b8b29ae775ad8c2e48c5391",
+        "download_url": "https://raw.githubusercontent.com/skerr17/private_repo/main/test.txt?token=BOI3VT4XB7Q3K4MXJ2XXKSDJYADXRAA",
+        "type": "file",
+        "_links": {
+            "self": "https://api.github.com/repos/skerr17/private_repo/contents/test.txt?ref=main",
+            "git": "https://api.github.com/repos/skerr17/private_repo/git/blobs/e69de29bb2d1d6434b8b29ae775ad8c2e48c5391",
+            "html": "https://github.com/skerr17/private_repo/blob/main/test.txt"
+        }
+    }
+]
