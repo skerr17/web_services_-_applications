@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Frames — Album</title>
+    <style>
+        body {
+            font-family: sans-serif;
+            max-width: 900px;
+            margin: 40px auto;
+            padding: 0 20px;
+            color: #333;
+        }
+        a.back { font-size: 13px; color: #888; text-decoration: none; }
+        a.back:hover { color: #333; }
+        h1 { margin: 8px 0 4px; }
+        p.subtitle { color: #888; margin: 0 0 32px; font-size: 13px; }
+
+        .upload-form {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            margin-bottom: 32px;
+        }
+        input[type="file"] {
+            flex: 1;
+            font-size: 14px;
+        }
+        button {
+            padding: 8px 16px;
+            background: #333;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        button:hover { background: #555; }
+
+        #message { font-size: 13px; color: #888; margin-bottom: 16px; min-height: 20px; }
+
+        .photo-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+            gap: 12px;
+        }
+        .photo-card {
+            border: 1px solid #eee;
+            border-radius: 8px;
+            overflow: hidden;
+            position: relative;
+        }
+        .photo-card img {
+            width: 100%;
+            height: 160px;
+            object-fit: cover;
+            display: block;
+        }
+        .photo-card .info {
+            padding: 8px 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .photo-card .info span {
+            font-size: 11px;
+            color: #aaa;
+        }
+        .delete-btn {
+            background: none;
+            border: 1px solid #ddd;
+            color: #999;
+            padding: 3px 8px;
+            font-size: 11px;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        .delete-btn:hover { background: #fee; color: #c00; border-color: #fcc; }
+    </style>
+</head>
+<body>
+
+    <a class="back" href="/">← Back to albums</a>
+    <h1 id="album-title">Loading...</h1>
+    <p class="subtitle" id="album-subtitle"></p>
+
+    <div class="upload-form">
+        <input type="file" id="photo-input" accept="image/*">
+        <button onclick="uploadPhoto()">Upload photo</button>
+    </div>
+
+    <p id="message"></p>
+    <div class="photo-grid" id="photo-grid"></div>
+
+    <script>
+        const params  = new URLSearchParams(window.location.search)
+        const albumId = params.get("id")
+        const grid    = document.getElementById("photo-grid")
+        const message = document.getElementById("message")
+
+        // --- Load album info ---
+        function loadAlbum() {
+            fetch(`/albums/${albumId}`)
+                .then(r => r.json())
+                .then(album => {
+                    document.getElementById("album-title").textContent = album.name
+                    document.getElementById("album-subtitle").textContent = `Created ${album.created_at}`
+                    document.title = `Frames — ${album.name}`
+                })
+        }
+
+        // --- Load photos ---
+        function loadPhotos() {
+            fetch(`/albums/${albumId}/photos`)
+                .then(r => r.json())
+                .then(photos => {
+                    grid.innerHTML = ""
+                    if (photos.length === 0) {
+                        message.textContent = "No photos yet — upload one above."
+                        return
+                    }
+                    message.textContent = ""
+                    photos.forEach(photo => {
+                        const card = document.createElement("div")
+                        card.className = "photo-card"
+                        card.innerHTML = `
+                            <img src="/static/uploads/${photo.filename}" alt="${photo.filename}">
+                            <div class="info">
+                                <span>${photo.uploaded_at}</span>
+                                <button class="delete-btn" onclick="deletePhoto(${photo.id})">Delete</button>
+                            </div>
+                        `
+                        grid.appendChild(card)
+                    })
+                })
+        }
+
+        // --- Upload a photo ---
+        function uploadPhoto() {
+            const fileInput = document.getElementById("photo-input")
+            if (!fileInput.files.length) {
+                message.textContent = "Please select a file first."
+                return
+            }
+            const formData = new FormData()
+            formData.append("photo", fileInput.files[0])
+
+            fetch(`/albums/${albumId}/photos`, {
+                method: "POST",
+                body: formData
+            })
+            .then(r => r.json())
+            .then(() => {
+                fileInput.value = ""
+                message.textContent = ""
+                loadPhotos()
+            })
+        }
+
+        // --- Delete a photo ---
+        function deletePhoto(id) {
+            if (!confirm("Delete this photo?")) return
+            fetch(`/photos/${id}`, { method: "DELETE" })
+                .then(() => loadPhotos())
+        }
+
+        // Run on load
+        loadAlbum()
+        loadPhotos()
+    </script>
+
+</body>
+</html>

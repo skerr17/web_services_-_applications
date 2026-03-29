@@ -94,17 +94,17 @@
                         return
                     }
                     message.textContent = ""
-                    albums.forEach(album => {
-                        const li = document.createElement("li")
-                        li.innerHTML = `
-                            <div>
-                                <strong>${album.name}</strong>
-                                <span> &nbsp;created ${album.created_at}</span>
-                            </div>
-                            <button class="delete-btn" onclick="deleteAlbum(${album.id})">Delete</button>
-                        `
-                        list.appendChild(li)
-                    })
+                albums.forEach(album => {
+                    const li = document.createElement("li")
+                    li.innerHTML = `
+                        <div>
+                            <strong><a href="/album?id=${album.id}">${album.name}</a></strong>
+                            <span> &nbsp;created ${album.created_at}</span>
+                        </div>
+                        <button class="delete-btn" onclick="deleteAlbum(${album.id})">Delete</button>
+                    `
+                    list.appendChild(li)
+                })
                 })
         }
 

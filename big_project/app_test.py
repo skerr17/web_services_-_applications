@@ -165,10 +165,15 @@ def delete_photo(photo_id):
     return "", 204
 
 
-
+# Serve the frontend from the static folder
 @app.route("/")
 def index():
     return send_from_directory("static", "index.html")
+
+
+@app.route("/album")
+def album_page():
+    return send_from_directory("static", "album.html")
 
 
 if __name__ == "__main__":
