@@ -1,0 +1,177 @@
+# Frames - Photo sharing web application
+# author: Stephen Kerr
+
+import os # for file handling and path operations
+import sqlite3 # for database interactions
+# Flask framework and utilities (jsonify for JSON responses, request for handling incoming data, g for global context)
+from flask import Flask, jsonify, request, g, send_from_directory 
+from werkzeug.utils import secure_filename # for safely handling uploaded file names
+
+app = Flask(__name__)
+
+# --- Config ---
+DATABASE    = "frames.db"
+UPLOAD_FOLDER = "static/uploads"
+ALLOWED_EXTENSIONS = {"jpg", "jpeg", "png", "gif", "webp"}
+
+os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+
+# --- DB helpers ---
+def get_db():
+    if "db" not in g:
+        g.db = sqlite3.connect(DATABASE)
+        g.db.row_factory = sqlite3.Row
+        g.db.execute("PRAGMA foreign_keys = ON")
+    return g.db
+
+@app.teardown_appcontext
+def close_db(error):
+    db = g.pop("db", None)
+    if db is not None:
+        db.close()
+
+def init_db():
+    db = get_db()
+    db.executescript("""
+        CREATE TABLE IF NOT EXISTS albums (
+            id         INTEGER PRIMARY KEY AUTOINCREMENT,
+            name       TEXT NOT NULL,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        );
+
+        CREATE TABLE IF NOT EXISTS photos (
+            id          INTEGER PRIMARY KEY AUTOINCREMENT,
+            filename    TEXT NOT NULL,
+            album_id    INTEGER NOT NULL,
+            uploaded_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (album_id) REFERENCES albums(id) ON DELETE CASCADE
+        );
+    """)
+    db.commit()
+
+def allowed_file(filename):
+    return "." in filename and filename.rsplit(".", 1)[1].lower() in ALLOWED_EXTENSIONS
+
+
+# ---------------------------------------------------------------
+# ALBUM ROUTES
+# ---------------------------------------------------------------
+
+# GET all albums
+@app.route("/albums", methods=["GET"])
+def get_albums():
+    rows = get_db().execute("SELECT * FROM albums ORDER BY created_at DESC").fetchall()
+    return jsonify([dict(r) for r in rows]), 200
+
+# GET one album
+@app.route("/albums/<int:album_id>", methods=["GET"])
+def get_album(album_id):
+    row = get_db().execute("SELECT * FROM albums WHERE id = ?", (album_id,)).fetchone()
+    if row is None:
+        return jsonify({"error": "Album not found"}), 404
+    return jsonify(dict(row)), 200
+
+# POST create album
+@app.route("/albums", methods=["POST"])
+def create_album():
+    data = request.get_json()
+    if not data or "name" not in data:
+        return jsonify({"error": "name is required"}), 400
+    db = get_db()
+    cursor = db.execute("INSERT INTO albums (name) VALUES (?)", (data["name"],))
+    db.commit()
+    row = db.execute("SELECT * FROM albums WHERE id = ?", (cursor.lastrowid,)).fetchone()
+    return jsonify(dict(row)), 201
+
+# PATCH update album
+@app.route("/albums/<int:album_id>", methods=["PATCH"])
+def update_album(album_id):
+    db = get_db()
+    row = db.execute("SELECT * FROM albums WHERE id = ?", (album_id,)).fetchone()
+    if row is None:
+        return jsonify({"error": "Album not found"}), 404
+    data = request.get_json()
+    name = data.get("name", row["name"])
+    db.execute("UPDATE albums SET name = ? WHERE id = ?", (name, album_id))
+    db.commit()
+    updated = db.execute("SELECT * FROM albums WHERE id = ?", (album_id,)).fetchone()
+    return jsonify(dict(updated)), 200
+
+# DELETE album (cascades to photos)
+@app.route("/albums/<int:album_id>", methods=["DELETE"])
+def delete_album(album_id):
+    db = get_db()
+    if db.execute("SELECT id FROM albums WHERE id = ?", (album_id,)).fetchone() is None:
+        return jsonify({"error": "Album not found"}), 404
+    db.execute("DELETE FROM albums WHERE id = ?", (album_id,))
+    db.commit()
+    return "", 204
+
+
+# ---------------------------------------------------------------
+# PHOTO ROUTES
+# ---------------------------------------------------------------
+
+# GET all photos in an album
+@app.route("/albums/<int:album_id>/photos", methods=["GET"])
+def get_photos(album_id):
+    if get_db().execute("SELECT id FROM albums WHERE id = ?", (album_id,)).fetchone() is None:
+        return jsonify({"error": "Album not found"}), 404
+    rows = get_db().execute(
+        "SELECT * FROM photos WHERE album_id = ? ORDER BY uploaded_at DESC", (album_id,)
+    ).fetchall()
+    return jsonify([dict(r) for r in rows]), 200
+
+# GET one photo
+@app.route("/photos/<int:photo_id>", methods=["GET"])
+def get_photo(photo_id):
+    row = get_db().execute("SELECT * FROM photos WHERE id = ?", (photo_id,)).fetchone()
+    if row is None:
+        return jsonify({"error": "Photo not found"}), 404
+    return jsonify(dict(row)), 200
+
+# POST upload a photo to an album
+@app.route("/albums/<int:album_id>/photos", methods=["POST"])
+def upload_photo(album_id):
+    if get_db().execute("SELECT id FROM albums WHERE id = ?", (album_id,)).fetchone() is None:
+        return jsonify({"error": "Album not found"}), 404
+    if "photo" not in request.files:
+        return jsonify({"error": "No file provided"}), 400
+    file = request.files["photo"]
+    if file.filename == "" or not allowed_file(file.filename):
+        return jsonify({"error": "Invalid file type"}), 400
+    filename = secure_filename(file.filename)
+    file.save(os.path.join(UPLOAD_FOLDER, filename))
+    db = get_db()
+    cursor = db.execute(
+        "INSERT INTO photos (filename, album_id) VALUES (?, ?)", (filename, album_id)
+    )
+    db.commit()
+    row = db.execute("SELECT * FROM photos WHERE id = ?", (cursor.lastrowid,)).fetchone()
+    return jsonify(dict(row)), 201
+
+# DELETE a photo
+@app.route("/photos/<int:photo_id>", methods=["DELETE"])
+def delete_photo(photo_id):
+    db = get_db()
+    row = db.execute("SELECT * FROM photos WHERE id = ?", (photo_id,)).fetchone()
+    if row is None:
+        return jsonify({"error": "Photo not found"}), 404
+    filepath = os.path.join(UPLOAD_FOLDER, row["filename"])
+    if os.path.exists(filepath):
+        os.remove(filepath)
+    db.execute("DELETE FROM photos WHERE id = ?", (photo_id,))
+    db.commit()
+    return "", 204
+
+
+
+@app.route("/")
+def index():
+    return send_from_directory("static", "index.html")
+
+
+if __name__ == "__main__":
+    with app.app_context():
+        init_db()
+    app.run(debug=True)
