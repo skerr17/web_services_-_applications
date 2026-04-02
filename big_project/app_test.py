@@ -188,6 +188,38 @@ def upload_page(slug):
     return send_from_directory("static", "upload.html")
 
 
+# GET all organisers — admin only
+@app.route("/users", methods=["GET"])
+@login_required
+def get_organisers():
+    if session["role"] != "admin":
+        return jsonify({"error": "Forbidden"}), 403
+    rows = get_db().execute(
+        "SELECT id, email FROM users WHERE role = 'organiser'"
+    ).fetchall()
+    return jsonify([dict(r) for r in rows]), 200
+
+
+# PATCH assign organiser to album — admin only
+@app.route("/albums/<int:album_id>/assign", methods=["PATCH"])
+@login_required
+def assign_organiser(album_id):
+    if session["role"] != "admin":
+        return jsonify({"error": "Forbidden"}), 403
+    data = request.get_json()
+    if "organiser_id" not in data:
+        return jsonify({"error": "organiser_id is required"}), 400
+    db = get_db()
+    if db.execute("SELECT id FROM albums WHERE id = ?", (album_id,)).fetchone() is None:
+        return jsonify({"error": "Album not found"}), 404
+    db.execute(
+        "UPDATE albums SET organiser_id = ? WHERE id = ?",
+        (data["organiser_id"], album_id)
+    )
+    db.commit()
+    return jsonify({"message": "Organiser assigned"}), 200
+
+
 # Guest photo upload — no login required
 @app.route("/upload/<slug>/photo", methods=["POST"])
 def guest_upload_photo(slug):

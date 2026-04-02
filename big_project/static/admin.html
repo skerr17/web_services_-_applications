@@ -13,8 +13,12 @@
         .album-list { list-style: none; padding: 0; }
         .album-item { background: white; border: 1px solid #ddd; border-radius: 6px; 
                       padding: 1rem; margin-bottom: 0.5rem; }
+        .album-footer { display: flex; gap: 0.5rem; margin-top: 0.75rem; align-items: center; }
+        .album-footer select { flex: 1; padding: 0.4rem; border: 1px solid #ddd; border-radius: 4px; }
+        .album-footer button { font-size: 0.85rem; padding: 0.4rem 0.75rem; }
         .error { color: red; font-size: 0.9rem; }
         .success { color: green; font-size: 0.9rem; }
+        .assigned { color: #888; font-size: 0.85rem; margin-top: 0.25rem; }
     </style>
 </head>
 <body>
@@ -52,12 +56,20 @@
     </ul>
 
     <script>
-        // Load albums as soon as the page opens
-        document.addEventListener("DOMContentLoaded", loadAlbums);
+        document.addEventListener("DOMContentLoaded", loadAll);
 
-        async function loadAlbums() {
-            const response = await fetch("/albums");
-            const albums = await response.json();
+        // Load both albums and organisers together so we can build the dropdowns
+        async function loadAll() {
+            const [albumRes, orgRes] = await Promise.all([
+                fetch("/albums"),
+                fetch("/users")
+            ]);
+            const albums = await albumRes.json();
+            const organisers = await orgRes.json();
+            renderAlbums(albums, organisers);
+        }
+
+        function renderAlbums(albums, organisers) {
             const list = document.getElementById("album-list");
 
             if (albums.length === 0) {
@@ -65,13 +77,57 @@
                 return;
             }
 
-            // Build a list item for each album returned from the API
-            list.innerHTML = albums.map(album => `
-                <li class="album-item">
-                    <strong>${album.name}</strong> — ${album.event_date || "No date"}<br>
-                    <small>Slug: ${album.slug} | Created: ${album.created_at}</small>
-                </li>
-            `).join("");
+            // Build the organiser options HTML once, reuse in each album row
+            const orgOptions = `
+                <option value="">— Select organiser —</option>
+                ${organisers.map(o => `<option value="${o.id}">${o.email}</option>`).join("")}
+            `;
+
+            list.innerHTML = albums.map(album => {
+                // Work out who is currently assigned (if anyone)
+                const assigned = organisers.find(o => o.id === album.organiser_id);
+                const assignedLabel = assigned
+                    ? `Currently assigned to: <strong>${assigned.email}</strong>`
+                    : "No organiser assigned";
+
+                return `
+                    <li class="album-item">
+                        <strong>${album.name}</strong> — ${album.event_date || "No date"}<br>
+                        <small>Slug: ${album.slug} | Created: ${album.created_at}</small>
+                        <p class="assigned" id="assigned-${album.id}">${assignedLabel}</p>
+                        <div class="album-footer">
+                            <select id="select-${album.id}">
+                                ${orgOptions}
+                            </select>
+                            <button onclick="assignOrganiser(${album.id})">Assign</button>
+                        </div>
+                    </li>
+                `;
+            }).join("");
+        }
+
+        async function assignOrganiser(albumId) {
+            const select = document.getElementById(`select-${albumId}`);
+            const organiserId = select.value;
+
+            if (!organiserId) {
+                alert("Please select an organiser first.");
+                return;
+            }
+
+            const response = await fetch(`/albums/${albumId}/assign`, {
+                method: "PATCH",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ organiser_id: parseInt(organiserId) })
+            });
+
+            if (response.ok) {
+                // Reload the list to show the updated assignment
+                loadAll();
+            } else {
+                const data = await response.json();
+                alert(data.error || "Failed to assign organiser.");
+            }
         }
 
         async function createAlbum() {
@@ -93,13 +149,12 @@
             });
 
             if (response.ok) {
-                // Clear the form and reload the list
                 document.getElementById("album-name").value = "";
                 document.getElementById("album-desc").value = "";
                 document.getElementById("album-date").value = "";
                 document.getElementById("album-slug").value = "";
                 errorEl.textContent = "";
-                loadAlbums();
+                loadAll();
             } else {
                 const data = await response.json();
                 errorEl.textContent = data.error || "Failed to create album.";
@@ -129,6 +184,7 @@
                 document.getElementById("org-password").value = "";
                 errorEl.textContent = "";
                 successEl.textContent = `Organiser ${email} created successfully.`;
+                loadAll(); // Reload so new organiser appears in dropdowns
             } else {
                 const data = await response.json();
                 successEl.textContent = "";
