@@ -3,11 +3,21 @@
 
 import os # for file handling and path operations
 import sqlite3 # for database interactions
-# Flask framework and utilities (jsonify for JSON responses, request for handling incoming data, g for global context)
-from flask import Flask, jsonify, request, g, send_from_directory 
+# Flask framework and utilities 
+#   (jsonify for JSON responses, request for handling incoming data, 
+#    g for global context), send_from_directory for serving static files, 
+#   session for user sessions, redirect and url_for for navigation
+from flask import Flask, jsonify, request, g, send_from_directory, session, redirect, url_for 
 from werkzeug.utils import secure_filename # for safely handling uploaded file names
+from werkzeug.security import generate_password_hash, check_password_hash # for password hashing 
+from functools import wraps # for creating decorators (e.g., for authentication)
+import secrets # for generating secure tokens
+
+
 
 app = Flask(__name__)
+app.secret_key = "change-this-to-something-random-in-production"
+
 
 # --- Config ---
 DATABASE    = "frames.db"
@@ -78,9 +88,65 @@ def allowed_file(filename):
     return "." in filename and filename.rsplit(".", 1)[1].lower() in ALLOWED_EXTENSIONS
 
 
+# Protects any route that requires a login
+def login_required(f):
+    @wraps(f)
+    def decorated(*args, **kwargs):
+        if "user_id" not in session:
+            return redirect(url_for("login"))
+        return f(*args, **kwargs)
+    return decorated
+
+
 # ---------------------------------------------------------------
 # ALBUM ROUTES
 # ---------------------------------------------------------------
+
+# login
+# GET serves the login page, POST processes the login form
+@app.route("/login", methods=["GET", "POST"])
+def login():
+    if request.method == "POST":
+        data = request.get_json()
+        email = data.get("email")
+        password = data.get("password")
+
+        user = get_db().execute(
+            "SELECT * FROM users WHERE email = ?", (email,)
+        ).fetchone()
+
+        if user is None or not check_password_hash(user["password_hash"], password):
+            return jsonify({"error": "Invalid credentials"}), 401
+
+        # Write to the session — this is what "being logged in" means
+        session["user_id"] = user["id"]
+        session["role"] = user["role"]
+        return jsonify({"role": user["role"]}), 200
+
+    return send_from_directory("static", "login.html")
+
+
+# logout
+@app.route("/logout", methods=["POST"])
+def logout():
+    session.clear()  # Wipes the session — user is now logged out
+    return jsonify({"message": "Logged out"}), 200
+
+
+# admin user seed
+def seed_admin():
+    db = get_db()
+    existing = db.execute("SELECT id FROM users WHERE role = 'admin'").fetchone()
+    if existing:
+        print("Admin already exists, skipping seed")
+        return
+    db.execute(
+        "INSERT INTO users (email, password_hash, role) VALUES (?, ?, ?)",
+        ("admin@frames.com", generate_password_hash("changeme123"), "admin")
+    )
+    db.commit()
+    print("Admin seeded: admin@frames.com / changeme123")
+
 
 # GET all albums
 @app.route("/albums", methods=["GET"])
@@ -204,4 +270,5 @@ def album_page():
 if __name__ == "__main__":
     with app.app_context():
         init_db()
+        seed_admin()
     app.run(debug=True)
