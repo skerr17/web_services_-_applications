@@ -271,6 +271,54 @@ def guest_upload_photo(slug):
     return jsonify(dict(row)), 201
 
 
+# Public QR redirect — no login required
+@app.route("/r/<token>")
+def qr_redirect(token):
+    row = get_db().execute(
+        "SELECT target_url FROM qr_redirects WHERE token = ?", (token,)
+    ).fetchone()
+    if row is None:
+        return "Invalid QR code", 404
+    return redirect(row["target_url"])
+
+
+
+# PATCH update QR redirect target — admin only
+@app.route("/qr/<int:album_id>", methods=["PATCH"])
+@login_required
+def update_qr_redirect(album_id):
+    if session["role"] != "admin":
+        return jsonify({"error": "Forbidden"}), 403
+    data = request.get_json()
+    if not data or "target_url" not in data:
+        return jsonify({"error": "target_url is required"}), 400
+    db = get_db()
+    row = db.execute(
+        "SELECT id FROM qr_redirects WHERE album_id = ?", (album_id,)
+    ).fetchone()
+    if row is None:
+        return jsonify({"error": "No QR redirect found for this album"}), 404
+    db.execute(
+        "UPDATE qr_redirects SET target_url = ?, updated_at = CURRENT_TIMESTAMP, updated_by = ? WHERE album_id = ?",
+        (data["target_url"], session["user_id"], album_id)
+    )
+    db.commit()
+    return jsonify({"message": "Redirect updated"}), 200
+
+# GET QR redirect info for an album — admin only
+@app.route("/qr/<int:album_id>", methods=["GET"])
+@login_required
+def get_qr_redirect(album_id):
+    if session["role"] != "admin":
+        return jsonify({"error": "Forbidden"}), 403
+    row = get_db().execute(
+        "SELECT * FROM qr_redirects WHERE album_id = ?", (album_id,)
+    ).fetchone()
+    if row is None:
+        return jsonify({"error": "No QR redirect found"}), 404
+    return jsonify(dict(row)), 200
+
+
 # GET all albums
 @app.route("/albums", methods=["GET"])
 def get_albums():
@@ -299,8 +347,18 @@ def create_album():
         "INSERT INTO albums (name, description, event_date, slug, created_by_admin) VALUES (?, ?, ?, ?, ?)",
         (data["name"], data.get("description"), data.get("event_date"), data["slug"], session["user_id"])
     )
+    album_id = cursor.lastrowid
+
+    # Auto-generate a QR redirect token for this album
+    token = secrets.token_urlsafe(6)  # e.g. "xk92pL"
+    target_url = f"/upload/{data['slug']}"
+    db.execute(
+        "INSERT INTO qr_redirects (album_id, token, target_url, updated_by) VALUES (?, ?, ?, ?)",
+        (album_id, token, target_url, session["user_id"])
+    )
+
     db.commit()
-    row = db.execute("SELECT * FROM albums WHERE id = ?", (cursor.lastrowid,)).fetchone()
+    row = db.execute("SELECT * FROM albums WHERE id = ?", (album_id,)).fetchone()
     return jsonify(dict(row)), 201
 
 # PATCH update album

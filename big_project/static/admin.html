@@ -16,9 +16,16 @@
         .album-footer { display: flex; gap: 0.5rem; margin-top: 0.75rem; align-items: center; }
         .album-footer select { flex: 1; padding: 0.4rem; border: 1px solid #ddd; border-radius: 4px; }
         .album-footer button { font-size: 0.85rem; padding: 0.4rem 0.75rem; }
+        .qr-box { background: #f0f7ff; border: 1px solid #cce; border-radius: 4px; 
+                  padding: 0.75rem; margin-top: 0.75rem; font-size: 0.85rem; }
+        .qr-box p { margin: 0 0 0.5rem 0; }
+        .qr-row { display: flex; gap: 0.5rem; margin-top: 0.5rem; }
+        .qr-row input { flex: 1; padding: 0.4rem; border: 1px solid #ddd; border-radius: 4px; }
+        .qr-row button { padding: 0.4rem 0.75rem; font-size: 0.85rem; white-space: nowrap; }
         .error { color: red; font-size: 0.9rem; }
         .success { color: green; font-size: 0.9rem; }
         .assigned { color: #888; font-size: 0.85rem; margin-top: 0.25rem; }
+        .token-url { font-family: monospace; color: #333; word-break: break-all; }
     </style>
 </head>
 <body>
@@ -58,7 +65,7 @@
     <script>
         document.addEventListener("DOMContentLoaded", loadAll);
 
-        // Load both albums and organisers together so we can build the dropdowns
+        // Fetch albums, organisers, and QR redirects in parallel
         async function loadAll() {
             const [albumRes, orgRes] = await Promise.all([
                 fetch("/albums"),
@@ -66,10 +73,22 @@
             ]);
             const albums = await albumRes.json();
             const organisers = await orgRes.json();
-            renderAlbums(albums, organisers);
+
+            // Fetch QR redirect info for each album
+            const qrResults = await Promise.all(
+                albums.map(a => fetch(`/qr/${a.id}`).then(r => r.ok ? r.json() : null))
+            );
+
+            // Build a lookup map: album_id -> qr row
+            const qrMap = {};
+            qrResults.forEach((qr, i) => {
+                if (qr) qrMap[albums[i].id] = qr;
+            });
+
+            renderAlbums(albums, organisers, qrMap);
         }
 
-        function renderAlbums(albums, organisers) {
+        function renderAlbums(albums, organisers, qrMap) {
             const list = document.getElementById("album-list");
 
             if (albums.length === 0) {
@@ -77,33 +96,78 @@
                 return;
             }
 
-            // Build the organiser options HTML once, reuse in each album row
             const orgOptions = `
                 <option value="">— Select organiser —</option>
                 ${organisers.map(o => `<option value="${o.id}">${o.email}</option>`).join("")}
             `;
 
             list.innerHTML = albums.map(album => {
-                // Work out who is currently assigned (if anyone)
                 const assigned = organisers.find(o => o.id === album.organiser_id);
                 const assignedLabel = assigned
                     ? `Currently assigned to: <strong>${assigned.email}</strong>`
                     : "No organiser assigned";
 
+                // Build the permanent token URL for this album
+                const qr = qrMap[album.id];
+                const base = window.location.origin;
+                const qrSection = qr ? `
+                    <div class="qr-box">
+                        <p><strong>Permanent QR URL:</strong><br>
+                        <span class="token-url">${base}/r/${qr.token}</span></p>
+                        <p>Currently points to: <code>${qr.target_url}</code></p>
+                        <div class="qr-row">
+                            <input type="text" id="qr-target-${album.id}" 
+                                   placeholder="New target e.g. /upload/${album.slug}">
+                            <button onclick="updateQr(${album.id})">Update redirect</button>
+                        </div>
+                        <p class="success" id="qr-success-${album.id}"></p>
+                        <p class="error" id="qr-error-${album.id}"></p>
+                    </div>
+                ` : `<p class="error">No QR redirect found for this album.</p>`;
+
                 return `
                     <li class="album-item">
                         <strong>${album.name}</strong> — ${album.event_date || "No date"}<br>
                         <small>Slug: ${album.slug} | Created: ${album.created_at}</small>
-                        <p class="assigned" id="assigned-${album.id}">${assignedLabel}</p>
+                        <p class="assigned">${assignedLabel}</p>
                         <div class="album-footer">
                             <select id="select-${album.id}">
                                 ${orgOptions}
                             </select>
                             <button onclick="assignOrganiser(${album.id})">Assign</button>
                         </div>
+                        ${qrSection}
                     </li>
                 `;
             }).join("");
+        }
+
+        async function updateQr(albumId) {
+            const targetUrl = document.getElementById(`qr-target-${albumId}`).value.trim();
+            const successEl = document.getElementById(`qr-success-${albumId}`);
+            const errorEl = document.getElementById(`qr-error-${albumId}`);
+
+            if (!targetUrl) {
+                errorEl.textContent = "Please enter a target URL.";
+                return;
+            }
+
+            const response = await fetch(`/qr/${albumId}`, {
+                method: "PATCH",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ target_url: targetUrl })
+            });
+
+            if (response.ok) {
+                successEl.textContent = "Redirect updated successfully.";
+                errorEl.textContent = "";
+                document.getElementById(`qr-target-${albumId}`).value = "";
+                loadAll(); // Reload to show updated target
+            } else {
+                const data = await response.json();
+                errorEl.textContent = data.error || "Failed to update redirect.";
+                successEl.textContent = "";
+            }
         }
 
         async function assignOrganiser(albumId) {
@@ -122,7 +186,6 @@
             });
 
             if (response.ok) {
-                // Reload the list to show the updated assignment
                 loadAll();
             } else {
                 const data = await response.json();
@@ -184,7 +247,7 @@
                 document.getElementById("org-password").value = "";
                 errorEl.textContent = "";
                 successEl.textContent = `Organiser ${email} created successfully.`;
-                loadAll(); // Reload so new organiser appears in dropdowns
+                loadAll();
             } else {
                 const data = await response.json();
                 successEl.textContent = "";
