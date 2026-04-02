@@ -104,7 +104,7 @@ def login_required(f):
 
 # login
 # GET serves the login page, POST processes the login form
-@app.route("/login", methods=["GET", "POST"])
+@app.route("/", methods=["GET", "POST"])
 def login():
     if request.method == "POST":
         data = request.get_json()
@@ -458,4 +458,4 @@ if __name__ == "__main__":
     with app.app_context():
         init_db()
         seed_admin()
-    app.run(debug=True)
+    app.run(debug=True, use_reloader=False)

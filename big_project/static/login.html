@@ -67,7 +67,7 @@
             const password = document.getElementById("password").value;
 
             // fetch() sends a POST request to our Flask /login route
-            const response = await fetch("/login", {
+            const response = await fetch("/", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ email, password })
