@@ -32,20 +32,45 @@ def close_db(error):
 
 def init_db():
     db = get_db()
-    db.executescript("""
+    db.execute("""
+        CREATE TABLE IF NOT EXISTS users (
+            id            INTEGER   PRIMARY KEY AUTOINCREMENT,
+            email         TEXT      NOT NULL UNIQUE,
+            password_hash TEXT      NOT NULL,
+            role          TEXT      NOT NULL DEFAULT 'organiser',
+            created_at    TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+    """)
+    db.execute("""
         CREATE TABLE IF NOT EXISTS albums (
-            id         INTEGER PRIMARY KEY AUTOINCREMENT,
-            name       TEXT NOT NULL,
-            created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-        );
-
+            id               INTEGER   PRIMARY KEY AUTOINCREMENT,
+            name             TEXT      NOT NULL,
+            description      TEXT,
+            event_date       TEXT,
+            slug             TEXT      NOT NULL UNIQUE,
+            created_by_admin INTEGER   REFERENCES users(id),
+            organiser_id     INTEGER   REFERENCES users(id),
+            created_at       TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+    """)
+    db.execute("""
         CREATE TABLE IF NOT EXISTS photos (
-            id          INTEGER PRIMARY KEY AUTOINCREMENT,
-            filename    TEXT NOT NULL,
-            album_id    INTEGER NOT NULL,
-            uploaded_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-            FOREIGN KEY (album_id) REFERENCES albums(id) ON DELETE CASCADE
-        );
+            id          INTEGER   PRIMARY KEY AUTOINCREMENT,
+            album_id    INTEGER   NOT NULL REFERENCES albums(id) ON DELETE CASCADE,
+            filename    TEXT      NOT NULL,
+            filepath    TEXT      NOT NULL,
+            uploaded_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+    """)
+    db.execute("""
+        CREATE TABLE IF NOT EXISTS qr_redirects (
+            id         INTEGER   PRIMARY KEY AUTOINCREMENT,
+            album_id   INTEGER   NOT NULL UNIQUE REFERENCES albums(id) ON DELETE CASCADE,
+            token      TEXT      NOT NULL UNIQUE,
+            target_url TEXT      NOT NULL,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_by INTEGER   REFERENCES users(id)
+        )
     """)
     db.commit()
 
