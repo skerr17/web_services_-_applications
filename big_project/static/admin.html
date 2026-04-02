@@ -14,6 +14,7 @@
         .album-item { background: white; border: 1px solid #ddd; border-radius: 6px; 
                       padding: 1rem; margin-bottom: 0.5rem; }
         .error { color: red; font-size: 0.9rem; }
+        .success { color: green; font-size: 0.9rem; }
     </style>
 </head>
 <body>
@@ -32,6 +33,16 @@
         <input type="text" id="album-slug" placeholder="Slug e.g. johns-wedding">
         <button onclick="createAlbum()">Create Album</button>
         <p class="error" id="album-error"></p>
+    </div>
+
+    <!-- Create Organiser Form -->
+    <div class="form-box">
+        <h2>Create Organiser Account</h2>
+        <input type="email" id="org-email" placeholder="Email address">
+        <input type="password" id="org-password" placeholder="Temporary password">
+        <button onclick="createOrganiser()">Create Organiser</button>
+        <p class="error" id="org-error"></p>
+        <p class="success" id="org-success"></p>
     </div>
 
     <!-- Album List -->
@@ -92,6 +103,36 @@
             } else {
                 const data = await response.json();
                 errorEl.textContent = data.error || "Failed to create album.";
+            }
+        }
+
+        async function createOrganiser() {
+            const email = document.getElementById("org-email").value.trim();
+            const password = document.getElementById("org-password").value.trim();
+            const errorEl = document.getElementById("org-error");
+            const successEl = document.getElementById("org-success");
+
+            if (!email || !password) {
+                errorEl.textContent = "Email and password are required.";
+                successEl.textContent = "";
+                return;
+            }
+
+            const response = await fetch("/users", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ email, password })
+            });
+
+            if (response.ok) {
+                document.getElementById("org-email").value = "";
+                document.getElementById("org-password").value = "";
+                errorEl.textContent = "";
+                successEl.textContent = `Organiser ${email} created successfully.`;
+            } else {
+                const data = await response.json();
+                successEl.textContent = "";
+                errorEl.textContent = data.error || "Failed to create organiser.";
             }
         }
 

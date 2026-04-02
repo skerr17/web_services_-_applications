@@ -156,6 +156,27 @@ def admin_page():
     return send_from_directory("static", "admin.html")
 
 
+# POST create organiser account — admin only
+@app.route("/users", methods=["POST"])
+@login_required
+def create_organiser():
+    if session["role"] != "admin":
+        return jsonify({"error": "Forbidden"}), 403
+    data = request.get_json()
+    if not data or "email" not in data or "password" not in data:
+        return jsonify({"error": "email and password are required"}), 400
+    db = get_db()
+    # Check if email already exists
+    if db.execute("SELECT id FROM users WHERE email = ?", (data["email"],)).fetchone():
+        return jsonify({"error": "Email already in use"}), 409
+    db.execute(
+        "INSERT INTO users (email, password_hash, role) VALUES (?, ?, ?)",
+        (data["email"], generate_password_hash(data["password"]), "organiser")
+    )
+    db.commit()
+    return jsonify({"message": "Organiser created"}), 201
+
+
 # Guest upload page — no login required
 @app.route("/upload/<slug>")
 def upload_page(slug):
