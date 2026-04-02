@@ -220,6 +220,29 @@ def assign_organiser(album_id):
     return jsonify({"message": "Organiser assigned"}), 200
 
 
+
+
+# Serve the organiser dashboard page
+@app.route("/dashboard")
+@login_required
+def dashboard_page():
+    if session["role"] != "organiser":
+        return jsonify({"error": "Forbidden"}), 403
+    return send_from_directory("static", "dashboard.html")
+
+
+# GET the album assigned to the logged-in organiser
+@app.route("/my-album", methods=["GET"])
+@login_required
+def my_album():
+    album = get_db().execute(
+        "SELECT * FROM albums WHERE organiser_id = ?", (session["user_id"],)
+    ).fetchone()
+    if album is None:
+        return jsonify({"error": "No album assigned"}), 404
+    return jsonify(dict(album)), 200
+
+
 # Guest photo upload — no login required
 @app.route("/upload/<slug>/photo", methods=["POST"])
 def guest_upload_photo(slug):
