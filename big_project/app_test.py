@@ -147,6 +147,14 @@ def seed_admin():
     db.commit()
     print("Admin seeded: admin@frames.com / changeme123")
 
+# admin
+@app.route("/admin")
+@login_required
+def admin_page():
+    if session["role"] != "admin":
+        return jsonify({"error": "Forbidden"}), 403
+    return send_from_directory("static", "admin.html")
+
 
 # GET all albums
 @app.route("/albums", methods=["GET"])
@@ -164,12 +172,18 @@ def get_album(album_id):
 
 # POST create album
 @app.route("/albums", methods=["POST"])
+@login_required
 def create_album():
+    if session["role"] != "admin":
+        return jsonify({"error": "Forbidden"}), 403
     data = request.get_json()
-    if not data or "name" not in data:
-        return jsonify({"error": "name is required"}), 400
+    if not data or "name" not in data or "slug" not in data:
+        return jsonify({"error": "name and slug are required"}), 400
     db = get_db()
-    cursor = db.execute("INSERT INTO albums (name) VALUES (?)", (data["name"],))
+    cursor = db.execute(
+        "INSERT INTO albums (name, description, event_date, slug, created_by_admin) VALUES (?, ?, ?, ?, ?)",
+        (data["name"], data.get("description"), data.get("event_date"), data["slug"], session["user_id"])
+    )
     db.commit()
     row = db.execute("SELECT * FROM albums WHERE id = ?", (cursor.lastrowid,)).fetchone()
     return jsonify(dict(row)), 201
