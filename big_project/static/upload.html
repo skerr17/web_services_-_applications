@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Frames — Upload Photo</title>
+    <style>
+        body {
+            font-family: sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            background: #f5f5f5;
+        }
+        .box {
+            background: white;
+            padding: 2rem;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            width: 320px;
+            text-align: center;
+        }
+        h1 { font-size: 1.4rem; margin-top: 0; }
+        p { color: #888; font-size: 0.9rem; }
+        input[type="file"] { margin: 1rem 0; width: 100%; }
+        button {
+            width: 100%;
+            padding: 0.6rem;
+            background: #333;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 1rem;
+        }
+        button:disabled { background: #aaa; cursor: not-allowed; }
+        #status { margin-top: 1rem; font-size: 0.9rem; min-height: 20px; }
+        .success { color: green; }
+        .error { color: red; }
+    </style>
+</head>
+<body>
+    <div class="box">
+        <h1>📷 Share your photos</h1>
+        <p>Upload a photo to the event album</p>
+
+        <input type="file" id="photo-input" accept="image/*">
+        <button id="upload-btn" onclick="uploadPhoto()">Upload</button>
+        <p id="status"></p>
+    </div>
+
+    <script>
+        // Get the slug from the URL path e.g. /upload/johns-wedding -> johns-wedding
+        const slug = window.location.pathname.split("/")[2];
+        const statusEl = document.getElementById("status");
+        const btn = document.getElementById("upload-btn");
+
+        async function uploadPhoto() {
+            const fileInput = document.getElementById("photo-input");
+
+            if (!fileInput.files.length) {
+                statusEl.textContent = "Please select a photo first.";
+                statusEl.className = "error";
+                return;
+            }
+
+            // FormData is used for file uploads instead of JSON
+            const formData = new FormData();
+            formData.append("photo", fileInput.files[0]);
+
+            // Disable the button while uploading
+            btn.disabled = true;
+            statusEl.textContent = "Uploading...";
+            statusEl.className = "";
+
+            const response = await fetch(`/upload/${slug}/photo`, {
+                method: "POST",
+                body: formData  // No Content-Type header needed — browser sets it automatically
+            });
+
+            if (response.ok) {
+                statusEl.textContent = "Photo uploaded successfully!";
+                statusEl.className = "success";
+                fileInput.value = ""; // Clear the file input
+            } else {
+                const data = await response.json();
+                statusEl.textContent = data.error || "Upload failed.";
+                statusEl.className = "error";
+            }
+
+            btn.disabled = false;
+        }
+    </script>
+</body>
+</html>

@@ -156,6 +156,45 @@ def admin_page():
     return send_from_directory("static", "admin.html")
 
 
+# Guest upload page — no login required
+@app.route("/upload/<slug>")
+def upload_page(slug):
+    album = get_db().execute(
+        "SELECT * FROM albums WHERE slug = ?", (slug,)
+    ).fetchone()
+    if album is None:
+        return "Album not found", 404
+    return send_from_directory("static", "upload.html")
+
+
+# Guest photo upload — no login required
+@app.route("/upload/<slug>/photo", methods=["POST"])
+def guest_upload_photo(slug):
+    album = get_db().execute(
+        "SELECT * FROM albums WHERE slug = ?", (slug,)
+    ).fetchone()
+    if album is None:
+        return jsonify({"error": "Album not found"}), 404
+    if "photo" not in request.files:
+        return jsonify({"error": "No file provided"}), 400
+    file = request.files["photo"]
+    if file.filename == "" or not allowed_file(file.filename):
+        return jsonify({"error": "Invalid file type"}), 400
+
+    filename = secure_filename(file.filename)
+    filepath = os.path.join(UPLOAD_FOLDER, filename)
+    file.save(filepath)
+
+    db = get_db()
+    cursor = db.execute(
+        "INSERT INTO photos (filename, filepath, album_id) VALUES (?, ?, ?)",
+        (filename, filepath, album["id"])
+    )
+    db.commit()
+    row = db.execute("SELECT * FROM photos WHERE id = ?", (cursor.lastrowid,)).fetchone()
+    return jsonify(dict(row)), 201
+
+
 # GET all albums
 @app.route("/albums", methods=["GET"])
 def get_albums():
