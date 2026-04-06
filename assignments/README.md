@@ -13,17 +13,17 @@ This repository contains the practical assignments for the module ***Web Service
 Throughout the semester there were a mix of small practical assignments /  mini projects. Each assignment folder includes the relevant notebook or script, along with the raw data, processed outputs and generated figures.
 
 ## Technologies Used
-- Python 3.12.1
+- Python 3.13.12
 - Git & Github
 - Visual Studio Code
 
 ## Assignments Overview:
 
-### Assignment 03 - Deal Cards
-- A program that deals cards, by calling the [Deck of Cards API]() and deals out 5 cards. The program also checks the output to tell the player if they have a flush, straight, pair, three of a kind, or four of a kind. The program does this by using a value map for the face cards (ace, king, queen, jack). For a direct link to Assignment 03 click [here](https://github.com/skerr17/web_services_-_applications/tree/main/assignments/assignment2)
+### Assignment 01 - Deal Cards
+- A program that deals 5 cards by calling the [Deck of Cards API](https://deckofcardsapi.com/). It evaluates the hand and congratulates the player if they have a pair, three of a kind, four of a kind, straight, or flush. [View Assignment ->](https://github.com/skerr17/web_services_-_applications/tree/main/assignments/assignment01)
 
-### Assignment 05 - Population Analysis
-- A notebook that performs data cleaning and demographic analysis on Irish CSO population data, including age/sex breakdown, weighted means, and comparative plots. For a direct link to Assignment 05 click [here](https://github.com/skerr17/programming-for-data-analytics/tree/main/assignments/assignment05)
+### Assignment 03 - Historical Exchequer Account
+- A notebook that calls the CSO API to retrieve the Exchequer Account (Historical Series) dataset and saves it to `cso.json` [View Assignment ->](https://github.com/skerr17/programming-for-data-analytics/tree/main/assignments/assignment03)
 
 ### Assignment 06 - Knock Airport Weather
 - A notebook that performs analysis of hourly weather data including temperature trends, daily/monthly averages, wind speed cleaning, rolling averages and maximum wind speed visualisation. For a direct link to Assignment 06 click [here](https://github.com/skerr17/programming-for-data-analytics/tree/main/assignments/assignment06)
