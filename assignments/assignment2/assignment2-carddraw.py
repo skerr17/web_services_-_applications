@@ -39,7 +39,7 @@ def is_straight(numeric_ranks, hand_size):
     return False
 
 
-def deal_a_card(number_of_cards):
+def deal_cards(number_of_cards):
     # check the input is a positive integer
     if not isinstance(number_of_cards, int) or number_of_cards < 1:
         raise ValueError("number_of_cards must be a positive integer")
@@ -101,4 +101,4 @@ def deal_a_card(number_of_cards):
     return cards
 
 if __name__ == "__main__":
-    deal_a_card(5)
+    deal_cards(5)
