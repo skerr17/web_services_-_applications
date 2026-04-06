@@ -1,7 +1,7 @@
-# This prohram reads a file from a repository
+# This program reads a file from a repository
 # and replace all the instances of the text "Andrew" with "Stephen"
 # the program commits the changes to the repository
-# Autherd by Stephen Kerr
+# Authored by Stephen Kerr
 
 # imports
 from github import Github
@@ -26,17 +26,28 @@ url_of_file = file_info.download_url
 
 # download the file content
 response = requests.get(url_of_file)
-print(response.status_code)
 
 content_of_file = response.text
 
 # replace all instances of "Andrew" with "Stephen"
 new_content = content_of_file.replace("Andrew", "Stephen")
 
-# update the file in the repository with the new content
-github_response = repo.update_file(file_info.path, 
+
+try: 
+    # update the file in the repository with the new content
+    github_response = repo.update_file(file_info.path, 
                                   "updated by program to replace Andrew with Stephen", 
                                   new_content, 
                                   file_info.sha
                                   )
+
+    print("File updated successfully")
+
+except Exception as e:
+    # print the error message if there is an error updating the file
+    print("Error updating file:", e)
+
+finally:
+    # close the response
+    g.close()
 
