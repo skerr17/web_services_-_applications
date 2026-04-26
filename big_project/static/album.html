@@ -15,7 +15,20 @@
         a.back { font-size: 13px; color: #888; text-decoration: none; }
         a.back:hover { color: #333; }
         h1 { margin: 8px 0 4px; }
-        p.subtitle { color: #888; margin: 0 0 32px; font-size: 13px; }
+        p.subtitle { color: #888; margin: 0 0 24px; font-size: 13px; }
+
+        /* Share + QR section */
+        .info-boxes { display: flex; gap: 1rem; margin-bottom: 2rem; flex-wrap: wrap; }
+        .info-box { background: #f0f7ff; border: 1px solid #cce; padding: 1rem;
+                    border-radius: 6px; flex: 1; min-width: 220px; }
+        .info-box strong { display: block; margin-bottom: 0.4rem; font-size: 0.9rem; }
+        .info-box input { width: 100%; padding: 0.4rem 0.5rem; box-sizing: border-box;
+                          border: 1px solid #ddd; border-radius: 4px; font-size: 0.85rem;
+                          color: #555; }
+        .info-box img { width: 160px; height: 160px; display: block; margin-bottom: 0.5rem; }
+        .info-box a { display: inline-block; font-size: 0.85rem; background: #333;
+                      color: white; padding: 0.35rem 0.75rem; border-radius: 4px;
+                      text-decoration: none; }
 
         .upload-form {
             display: flex;
@@ -81,9 +94,23 @@
 </head>
 <body>
 
-    <a class="back" href="/">← Back to albums</a>
+    <!-- Back link goes to admin page, not login -->
+    <a class="back" href="/admin">← Back to admin</a>
     <h1 id="album-title">Loading...</h1>
     <p class="subtitle" id="album-subtitle"></p>
+
+    <!-- Share link and QR code -->
+    <div class="info-boxes">
+        <div class="info-box">
+            <strong>Guest upload link</strong>
+            <input type="text" id="share-link" readonly>
+        </div>
+        <div class="info-box">
+            <strong>QR Code</strong>
+            <img id="qr-img" src="" alt="QR code">
+            <a id="qr-download" download="frames-qr.png">Download QR</a>
+        </div>
+    </div>
 
     <div class="upload-form">
         <input type="file" id="photo-input" accept="image/*">
@@ -105,8 +132,18 @@
                 .then(r => r.json())
                 .then(album => {
                     document.getElementById("album-title").textContent = album.name
-                    document.getElementById("album-subtitle").textContent = `Created ${album.created_at}`
+                    document.getElementById("album-subtitle").textContent =
+                        `${album.description || "No description"} — ${album.event_date || "No date"}`
                     document.title = `Frames — ${album.name}`
+
+                    // Set guest upload link
+                    const base = window.location.origin
+                    document.getElementById("share-link").value = `${base}/upload/${album.slug}`
+
+                    // Set QR image and download link
+                    const qrUrl = `/albums/${albumId}/qr?t=${Date.now()}`
+                    document.getElementById("qr-img").src = qrUrl
+                    document.getElementById("qr-download").href = qrUrl
                 })
         }
 
