@@ -7,13 +7,18 @@ import sqlite3 # for database interactions
 #   (jsonify for JSON responses, request for handling incoming data, 
 #    g for global context), send_from_directory for serving static files, 
 #   session for user sessions, redirect and url_for for navigation
-from flask import Flask, jsonify, request, g, send_from_directory, session, redirect, url_for 
+# response for serving QR code images
+from flask import Flask, jsonify, request, g, send_from_directory, session, redirect, url_for, Response
 from werkzeug.utils import secure_filename # for safely handling uploaded file names
 from werkzeug.security import generate_password_hash, check_password_hash # for password hashing 
 from functools import wraps # for creating decorators (e.g., for authentication)
 import secrets # for generating secure tokens
 
-from config import keys, admin_credentials
+
+from config import keys, admin_credentials # Import configuration variables
+
+from qr_code_generator import generate_qr # Import the QR code generation function
+
 
 
 
@@ -316,6 +321,33 @@ def get_qr_redirect(album_id):
     if row is None:
         return jsonify({"error": "No QR redirect found"}), 404
     return jsonify(dict(row)), 200
+
+
+# GET QR code image for an album — admin or assigned organiser
+@app.route("/albums/<int:album_id>/qr", methods=["GET"])
+@login_required
+def get_qr_image(album_id):
+    db = get_db()
+
+    # Organisers can only access their own album's QR
+    if session["role"] == "organiser":
+        album = db.execute(
+            "SELECT id FROM albums WHERE id = ? AND organiser_id = ?",
+            (album_id, session["user_id"])
+        ).fetchone()
+        if album is None:
+            return jsonify({"error": "Forbidden"}), 403
+
+    row = db.execute(
+        "SELECT token FROM qr_redirects WHERE album_id = ?", (album_id,)
+    ).fetchone()
+    if row is None:
+        return jsonify({"error": "No QR redirect found"}), 404
+
+    url = f"{request.host_url}r/{row['token']}"
+    png_bytes = generate_qr(url)
+
+    return Response(png_bytes, mimetype="image/png")
 
 
 # GET all albums
