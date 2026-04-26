@@ -364,6 +364,7 @@ def create_album():
 
 # PATCH update album
 @app.route("/albums/<int:album_id>", methods=["PATCH"])
+@login_required
 def update_album(album_id):
     db = get_db()
     row = db.execute("SELECT * FROM albums WHERE id = ?", (album_id,)).fetchone()
@@ -378,6 +379,7 @@ def update_album(album_id):
 
 # DELETE album (cascades to photos)
 @app.route("/albums/<int:album_id>", methods=["DELETE"])
+@login_required
 def delete_album(album_id):
     db = get_db()
     if db.execute("SELECT id FROM albums WHERE id = ?", (album_id,)).fetchone() is None:
