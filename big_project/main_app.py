@@ -100,6 +100,18 @@ def login_required(f):
     return decorated
 
 
+# Protects routes that require admin role
+def admin_required(f):
+    @wraps(f)
+    def decorated(*args, **kwargs):
+        if "user_id" not in session:
+            return redirect(url_for("login"))
+        if session.get("role") != "admin":
+            return jsonify({"error": "Forbidden"}), 403
+        return f(*args, **kwargs)
+    return decorated
+
+
 # ---------------------------------------------------------------
 # ALBUM ROUTES
 # ---------------------------------------------------------------
@@ -150,19 +162,15 @@ def seed_admin():
 
 # admin
 @app.route("/admin")
-@login_required
+@admin_required
 def admin_page():
-    if session["role"] != "admin":
-        return jsonify({"error": "Forbidden"}), 403
     return send_from_directory("static", "admin.html")
 
 
 # POST create organiser account — admin only
 @app.route("/users", methods=["POST"])
-@login_required
+@admin_required
 def create_organiser():
-    if session["role"] != "admin":
-        return jsonify({"error": "Forbidden"}), 403
     data = request.get_json()
     if not data or "email" not in data or "password" not in data:
         return jsonify({"error": "email and password are required"}), 400
@@ -191,10 +199,8 @@ def upload_page(slug):
 
 # GET all organisers — admin only
 @app.route("/users", methods=["GET"])
-@login_required
+@admin_required
 def get_organisers():
-    if session["role"] != "admin":
-        return jsonify({"error": "Forbidden"}), 403
     rows = get_db().execute(
         "SELECT id, email FROM users WHERE role = 'organiser'"
     ).fetchall()
@@ -203,10 +209,8 @@ def get_organisers():
 
 # PATCH assign organiser to album — admin only
 @app.route("/albums/<int:album_id>/assign", methods=["PATCH"])
-@login_required
+@admin_required
 def assign_organiser(album_id):
-    if session["role"] != "admin":
-        return jsonify({"error": "Forbidden"}), 403
     data = request.get_json()
     if "organiser_id" not in data:
         return jsonify({"error": "organiser_id is required"}), 400
@@ -225,10 +229,8 @@ def assign_organiser(album_id):
 
 # Serve the organiser dashboard page
 @app.route("/dashboard")
-@login_required
+@admin_required
 def dashboard_page():
-    if session["role"] != "organiser":
-        return jsonify({"error": "Forbidden"}), 403
     return send_from_directory("static", "dashboard.html")
 
 
@@ -286,10 +288,8 @@ def qr_redirect(token):
 
 # PATCH update QR redirect target — admin only
 @app.route("/qr/<int:album_id>", methods=["PATCH"])
-@login_required
+@admin_required
 def update_qr_redirect(album_id):
-    if session["role"] != "admin":
-        return jsonify({"error": "Forbidden"}), 403
     data = request.get_json()
     if not data or "target_url" not in data:
         return jsonify({"error": "target_url is required"}), 400
@@ -308,10 +308,8 @@ def update_qr_redirect(album_id):
 
 # GET QR redirect info for an album — admin only
 @app.route("/qr/<int:album_id>", methods=["GET"])
-@login_required
+@admin_required
 def get_qr_redirect(album_id):
-    if session["role"] != "admin":
-        return jsonify({"error": "Forbidden"}), 403
     row = get_db().execute(
         "SELECT * FROM qr_redirects WHERE album_id = ?", (album_id,)
     ).fetchone()
@@ -336,10 +334,8 @@ def get_album(album_id):
 
 # POST create album
 @app.route("/albums", methods=["POST"])
-@login_required
+@admin_required
 def create_album():
-    if session["role"] != "admin":
-        return jsonify({"error": "Forbidden"}), 403
     data = request.get_json()
     if not data or "name" not in data or "slug" not in data:
         return jsonify({"error": "name and slug are required"}), 400
