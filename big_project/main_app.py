@@ -260,7 +260,7 @@ def guest_upload_photo(slug):
     if file.filename == "" or not allowed_file(file.filename):
         return jsonify({"error": "Invalid file type"}), 400
 
-    filename = secure_filename(file.filename)
+    filename = secrets.token_hex(6) + "_" + secure_filename(file.filename)
     filepath = os.path.join(UPLOAD_FOLDER, filename)
     file.save(filepath)
 
