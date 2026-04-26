@@ -191,6 +191,26 @@ def create_organiser():
     return jsonify({"message": "Organiser created"}), 201
 
 
+
+# DELETE an organiser — admin only
+@app.route("/users/<int:user_id>", methods=["DELETE"])
+@admin_required
+def delete_organiser(user_id):
+    db = get_db()
+    user = db.execute(
+        "SELECT id FROM users WHERE id = ? AND role = 'organiser'", (user_id,)
+    ).fetchone()
+    if user is None:
+        return jsonify({"error": "Organiser not found"}), 404
+    # Unassign from any album first
+    db.execute(
+        "UPDATE albums SET organiser_id = NULL WHERE organiser_id = ?", (user_id,)
+    )
+    db.execute("DELETE FROM users WHERE id = ?", (user_id,))
+    db.commit()
+    return "", 204
+
+
 # Guest upload page — no login required
 @app.route("/upload/<slug>")
 def upload_page(slug):
