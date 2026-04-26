@@ -13,10 +13,12 @@ from werkzeug.security import generate_password_hash, check_password_hash # for 
 from functools import wraps # for creating decorators (e.g., for authentication)
 import secrets # for generating secure tokens
 
+from config import keys, admin_credentials
+
 
 
 app = Flask(__name__)
-app.secret_key = "change-this-to-something-random-in-production"
+app.secret_key = keys["SECRET_KEY"]
 
 
 # --- Config ---
@@ -142,10 +144,9 @@ def seed_admin():
         return
     db.execute(
         "INSERT INTO users (email, password_hash, role) VALUES (?, ?, ?)",
-        ("admin@frames.com", generate_password_hash("changeme123"), "admin")
+        (admin_credentials["username"], generate_password_hash(admin_credentials["password"]), "admin")
     )
     db.commit()
-    print("Admin seeded: admin@frames.com / changeme123")
 
 # admin
 @app.route("/admin")
@@ -443,10 +444,6 @@ def delete_photo(photo_id):
     return "", 204
 
 
-# Serve the frontend from the static folder
-@app.route("/")
-def index():
-    return send_from_directory("static", "index.html")
 
 
 @app.route("/album")
