@@ -229,7 +229,7 @@ def assign_organiser(album_id):
 
 # Serve the organiser dashboard page
 @app.route("/dashboard")
-@admin_required
+@login_required
 def dashboard_page():
     return send_from_directory("static", "dashboard.html")
 
@@ -360,7 +360,7 @@ def create_album():
 
 # PATCH update album
 @app.route("/albums/<int:album_id>", methods=["PATCH"])
-@login_required
+@admin_required
 def update_album(album_id):
     db = get_db()
     row = db.execute("SELECT * FROM albums WHERE id = ?", (album_id,)).fetchone()
@@ -375,7 +375,7 @@ def update_album(album_id):
 
 # DELETE album (cascades to photos)
 @app.route("/albums/<int:album_id>", methods=["DELETE"])
-@login_required
+@admin_required
 def delete_album(album_id):
     db = get_db()
     if db.execute("SELECT id FROM albums WHERE id = ?", (album_id,)).fetchone() is None:
