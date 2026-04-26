@@ -23,6 +23,22 @@
         .album-footer button { font-size: 0.85rem; padding: 0.4rem 0.75rem; }
         .assigned { color: #888; font-size: 0.85rem; margin: 0.25rem 0 0; }
 
+        /* Album action buttons */
+        .album-actions { display: flex; gap: 0.5rem; margin-top: 0.5rem; }
+        .btn-view { font-size: 0.85rem; padding: 0.4rem 0.75rem; background: #333;
+                    color: white; border: none; border-radius: 4px; text-decoration: none;
+                    cursor: pointer; display: inline-block; }
+        .btn-delete { font-size: 0.85rem; padding: 0.4rem 0.75rem; background: white;
+                      color: #c00; border: 1px solid #fcc; border-radius: 4px; cursor: pointer; }
+        .btn-delete:hover { background: #fee; }
+
+        /* Organiser list */
+        .org-list { list-style: none; padding: 0; }
+        .org-item { background: white; border: 1px solid #ddd; border-radius: 6px;
+                    padding: 0.75rem 1rem; margin-bottom: 0.5rem;
+                    display: flex; justify-content: space-between; align-items: center; }
+        .org-item span { font-size: 0.9rem; }
+
         /* QR table */
         .qr-table-wrap { overflow-x: auto; margin-bottom: 2rem; }
         table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
@@ -74,6 +90,12 @@
         <li>Loading...</li>
     </ul>
 
+    <!-- Organiser List -->
+    <h2>All Organisers</h2>
+    <ul class="org-list" id="org-list">
+        <li>Loading...</li>
+    </ul>
+
     <!-- QR Redirects Table -->
     <h2>QR Redirects</h2>
     <div class="qr-table-wrap">
@@ -103,7 +125,6 @@
             const albums = await albumRes.json();
             const organisers = await orgRes.json();
 
-            // Fetch QR data for all albums in parallel
             const qrResults = await Promise.all(
                 albums.map(a => fetch(`/qr/${a.id}`).then(r => r.ok ? r.json() : null))
             );
@@ -114,6 +135,7 @@
             });
 
             renderAlbums(albums, organisers);
+            renderOrganisers(organisers, albums);
             renderQrTable(albums, qrMap);
         }
 
@@ -137,10 +159,34 @@
                         <strong>${album.name}</strong> — ${album.event_date || "No date"}<br>
                         <small>Slug: ${album.slug} | Created: ${album.created_at}</small>
                         <p class="assigned">${assignedLabel}</p>
+                        <div class="album-actions">
+                            <a class="btn-view" href="/album?id=${album.id}">View Album</a>
+                            <button class="btn-delete" data-id="${album.id}" onclick="deleteAlbum(this)">Delete</button>
+                        </div>
                         <div class="album-footer">
                             <select id="select-${album.id}">${orgOptions}</select>
                             <button onclick="assignOrganiser(${album.id})">Assign</button>
                         </div>
+                    </li>
+                `;
+            }).join("");
+        }
+
+        function renderOrganisers(organisers, albums) {
+            const list = document.getElementById("org-list");
+            if (organisers.length === 0) {
+                list.innerHTML = "<li>No organisers yet.</li>";
+                return;
+            }
+            list.innerHTML = organisers.map(org => {
+                const assignedAlbum = albums.find(a => a.organiser_id === org.id);
+                const albumLabel = assignedAlbum
+                    ? `Assigned to: <strong>${assignedAlbum.name}</strong>`
+                    : "No album assigned";
+                return `
+                    <li class="org-item">
+                        <span>${org.email} — <small>${albumLabel}</small></span>
+                        <button class="btn-delete" data-id="${org.id}" onclick="deleteOrganiser(this)">Delete</button>
                     </li>
                 `;
             }).join("");
@@ -170,7 +216,7 @@
                         <td><span class="target">${qr.target_url}</span></td>
                         <td>
                             <div class="update-row">
-                                <input type="text" id="qr-input-${album.id}" 
+                                <input type="text" id="qr-input-${album.id}"
                                        placeholder="e.g. /upload/${album.slug}">
                                 <button onclick="updateQr(${album.id})">Update</button>
                             </div>
@@ -180,6 +226,31 @@
                     </tr>
                 `;
             }).join("");
+        }
+
+        // Uses data-id attribute on the button instead of passing strings through onclick
+        // This avoids breakage when album names contain apostrophes or special characters
+        async function deleteAlbum(btn) {
+            const albumId = btn.dataset.id;
+            if (!confirm("Delete this album? This will also delete all its photos.")) return;
+            const response = await fetch(`/albums/${albumId}`, { method: "DELETE" });
+            if (response.ok) {
+                loadAll();
+            } else {
+                alert("Failed to delete album.");
+            }
+        }
+
+        async function deleteOrganiser(btn) {
+            const organiserId = btn.dataset.id;
+            if (!confirm("Delete this organiser? This cannot be undone.")) return;
+            const response = await fetch(`/users/${organiserId}`, { method: "DELETE" });
+            if (response.ok) {
+                loadAll();
+            } else {
+                const data = await response.json();
+                alert(data.error || "Failed to delete organiser.");
+            }
         }
 
         async function updateQr(albumId) {
@@ -203,7 +274,7 @@
                 okEl.textContent = "Redirect updated.";
                 errEl.textContent = "";
                 input.value = "";
-                loadAll(); // Reload to show new target in table
+                loadAll();
             } else {
                 const data = await response.json();
                 errEl.textContent = data.error || "Failed to update.";
