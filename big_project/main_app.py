@@ -417,11 +417,13 @@ def upload_photo(album_id):
     file = request.files["photo"]
     if file.filename == "" or not allowed_file(file.filename):
         return jsonify({"error": "Invalid file type"}), 400
-    filename = secure_filename(file.filename)
-    file.save(os.path.join(UPLOAD_FOLDER, filename))
+    filename = secrets.token_hex(6) + "_" + secure_filename(file.filename)  # also fix collision here
+    filepath = os.path.join(UPLOAD_FOLDER, filename)
+    file.save(filepath)
     db = get_db()
     cursor = db.execute(
-        "INSERT INTO photos (filename, album_id) VALUES (?, ?)", (filename, album_id)
+        "INSERT INTO photos (filename, filepath, album_id) VALUES (?, ?, ?)",
+        (filename, filepath, album_id)
     )
     db.commit()
     row = db.execute("SELECT * FROM photos WHERE id = ?", (cursor.lastrowid,)).fetchone()
