@@ -340,11 +340,22 @@ def update_qr_redirect(album_id):
     db.commit()
     return jsonify({"message": "Redirect updated"}), 200
 
-# GET QR redirect info for an album — admin only
+# GET QR redirect info for an album — admin or assigned organiser
 @app.route("/qr/<int:album_id>", methods=["GET"])
-@admin_required
+@login_required
 def get_qr_redirect(album_id):
-    row = get_db().execute(
+    db = get_db()
+
+    # Organisers can only access their own album's QR info
+    if session["role"] == "organiser":
+        album = db.execute(
+            "SELECT id FROM albums WHERE id = ? AND organiser_id = ?",
+            (album_id, session["user_id"])
+        ).fetchone()
+        if album is None:
+            return jsonify({"error": "Forbidden"}), 403
+
+    row = db.execute(
         "SELECT * FROM qr_redirects WHERE album_id = ?", (album_id,)
     ).fetchone()
     if row is None:
