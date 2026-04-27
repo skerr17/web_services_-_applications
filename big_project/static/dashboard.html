@@ -8,8 +8,22 @@
         body { font-family: sans-serif; max-width: 900px; margin: 2rem auto; padding: 0 1rem; }
         .top-bar { display: flex; justify-content: space-between; align-items: center; }
         h1 { font-size: 1.5rem; }
-        .album-info { background: #f9f9f9; padding: 1rem; border-radius: 6px; margin-bottom: 2rem; }
+        .album-info { background: #f9f9f9; padding: 1rem; border-radius: 6px; margin-bottom: 1.5rem; }
         .album-info p { margin: 0.25rem 0; color: #555; }
+
+        .action-row { display: flex; gap: 0.6rem; align-items: center; margin-bottom: 1.5rem; flex-wrap: wrap; }
+        .action-row button, .action-row a {
+            font-size: 0.85rem; padding: 0.4rem 0.9rem; border-radius: 4px;
+            cursor: pointer; text-decoration: none; border: 1px solid #ccc;
+            background: white; color: #333;
+        }
+        .action-row button:hover, .action-row a:hover { background: #f5f5f5; }
+        .copy-confirm { font-size: 0.8rem; color: green; opacity: 0; transition: opacity 0.3s; }
+        .copy-confirm.show { opacity: 1; }
+
+        .qr-label { font-size: 0.8rem; color: #888; margin: 0 0 0.5rem; }
+
+        #status { color: #888; font-size: 0.9rem; margin-bottom: 1rem; }
         .photo-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 1rem; }
         .photo-card { border: 1px solid #ddd; border-radius: 6px; overflow: hidden; background: white; }
         .photo-card img { width: 100%; height: 160px; object-fit: cover; display: block; }
@@ -21,17 +35,6 @@
         .photo-actions a { background: #333; color: white; border: none; }
         .photo-actions button { background: white; color: #c00; border: 1px solid #fcc; }
         .photo-actions button:hover { background: #fee; }
-        #status { color: #888; font-size: 0.9rem; margin-bottom: 1rem; }
-        .share-box { background: #f0f7ff; border: 1px solid #cce; padding: 1rem;
-                     border-radius: 6px; margin-bottom: 2rem; }
-        .share-box input { width: 100%; padding: 0.5rem; box-sizing: border-box;
-                           border: 1px solid #ddd; border-radius: 4px; margin-top: 0.5rem; }
-        .qr-box { background: #f0f7ff; border: 1px solid #cce; padding: 1rem;
-                  border-radius: 6px; margin-bottom: 2rem; }
-        .qr-box p { font-size: 0.85rem; color: #666; margin: 0.25rem 0 0.75rem; }
-        .qr-box a { display: inline-block; margin-top: 0.75rem; font-size: 0.85rem;
-                    background: #333; color: white; padding: 0.4rem 0.8rem;
-                    border-radius: 4px; text-decoration: none; }
     </style>
 </head>
 <body>
@@ -41,34 +44,27 @@
         <button onclick="handleLogout()">Logout</button>
     </div>
 
-    <!-- Album info -->
     <div class="album-info" id="album-info">Loading...</div>
 
-    <!-- Share link -->
-    <div class="share-box">
-        <strong>Guest upload link</strong>
-        <input type="text" id="share-link" readonly>
-    </div>
-
-    <!-- QR Code -->
-    <div class="qr-box">
-        <strong>QR Code</strong>
-        <p>Print or share this — guests scan it to upload photos.</p>
-        <img id="qr-img" src="" alt="QR code" style="width:200px; height:200px; display:block;">
+    <div class="action-row">
+        <button onclick="copyLink()">Copy guest link</button>
+        <span class="copy-confirm" id="copy-confirm">Copied!</span>
         <a id="qr-download" download="frames-qr.png">Download QR</a>
     </div>
 
-    <!-- Photo grid -->
+    <p class="qr-label">Scan to upload photos</p>
+    <img id="qr-img" src="" alt="QR code" style="width:160px; height:160px; display:block; margin-bottom:2rem;">
+
     <p id="status"></p>
     <div class="photo-grid" id="photo-grid"></div>
 
     <script>
         let albumId = null;
+        let shareUrl = "";
 
         document.addEventListener("DOMContentLoaded", loadDashboard);
 
         async function loadDashboard() {
-            // First fetch the organiser's assigned album
             const albumRes = await fetch("/my-album");
 
             if (!albumRes.ok) {
@@ -79,24 +75,33 @@
             const album = await albumRes.json();
             albumId = album.id;
 
-            // Show album details
             document.getElementById("album-info").innerHTML = `
                 <strong>${album.name}</strong>
                 <p>${album.description || "No description"}</p>
                 <p>Date: ${album.event_date || "Not set"}</p>
             `;
 
-            // Build the guest upload link from the slug
-            const base = window.location.origin;
-            document.getElementById("share-link").value = `${base}/upload/${album.slug}`;
-
-            // Set QR code image and download link
             const qrUrl = `/albums/${album.id}/qr?t=${Date.now()}`;
             document.getElementById("qr-img").src = qrUrl;
             document.getElementById("qr-download").href = qrUrl;
 
-            // Load the photos for this album
+            // Fetch live redirect target so share URL stays in sync
+            const qrRes = await fetch(`/qr/${album.id}`);
+            if (qrRes.ok) {
+                const qr = await qrRes.json();
+                shareUrl = `${window.location.origin}${qr.target_url}`;
+            }
+
             loadPhotos();
+        }
+
+        function copyLink() {
+            if (!shareUrl) return;
+            navigator.clipboard.writeText(shareUrl).then(() => {
+                const el = document.getElementById("copy-confirm");
+                el.classList.add("show");
+                setTimeout(() => el.classList.remove("show"), 2000);
+            });
         }
 
         async function loadPhotos() {
@@ -113,7 +118,6 @@
 
             status.textContent = `${photos.length} photo(s)`;
 
-            // Build a card for each photo with download and delete buttons
             grid.innerHTML = photos.map(photo => `
                 <div class="photo-card" id="card-${photo.id}">
                     <img src="/static/uploads/${photo.filename}" alt="photo">
@@ -129,11 +133,8 @@
 
         async function deletePhoto(photoId) {
             if (!confirm("Delete this photo?")) return;
-
             const response = await fetch(`/photos/${photoId}`, { method: "DELETE" });
-
             if (response.ok) {
-                // Remove the card from the page without reloading everything
                 document.getElementById(`card-${photoId}`).remove();
             } else {
                 alert("Failed to delete photo.");
