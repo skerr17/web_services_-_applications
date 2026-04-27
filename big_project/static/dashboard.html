@@ -23,6 +23,13 @@
 
         .qr-label { font-size: 0.8rem; color: #888; margin: 0 0 0.5rem; }
 
+        .upload-form { display: flex; gap: 8px; align-items: center; margin-bottom: 0.5rem; }
+        .upload-form input[type="file"] { flex: 1; font-size: 0.85rem; }
+        .upload-form button { padding: 0.4rem 0.9rem; font-size: 0.85rem; border-radius: 4px;
+                              background: #333; color: white; border: none; cursor: pointer; }
+        .upload-form button:hover { background: #555; }
+        #upload-msg { font-size: 0.8rem; color: #888; margin-bottom: 1.5rem; min-height: 1rem; }
+
         #status { color: #888; font-size: 0.9rem; margin-bottom: 1rem; }
         .photo-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 1rem; }
         .photo-card { border: 1px solid #ddd; border-radius: 6px; overflow: hidden; background: white; }
@@ -54,6 +61,13 @@
 
     <p class="qr-label">Scan to upload photos</p>
     <img id="qr-img" src="" alt="QR code" style="width:160px; height:160px; display:block; margin-bottom:2rem;">
+
+    <!-- Upload form for organiser -->
+    <div class="upload-form">
+        <input type="file" id="photo-input" accept="image/*" multiple>
+        <button onclick="uploadPhotos()">Upload photos</button>
+    </div>
+    <p id="upload-msg"></p>
 
     <p id="status"></p>
     <div class="photo-grid" id="photo-grid"></div>
@@ -102,6 +116,36 @@
                 el.classList.add("show");
                 setTimeout(() => el.classList.remove("show"), 2000);
             });
+        }
+
+        async function uploadPhotos() {
+            const fileInput = document.getElementById("photo-input");
+            const msgEl = document.getElementById("upload-msg");
+
+            if (!fileInput.files.length) {
+                msgEl.textContent = "Please select at least one file.";
+                return;
+            }
+
+            const files = Array.from(fileInput.files);
+            msgEl.textContent = `Uploading ${files.length} photo(s)...`;
+
+            // Upload each file sequentially
+            let uploaded = 0;
+            for (const file of files) {
+                const formData = new FormData();
+                formData.append("photo", file);
+                const res = await fetch(`/albums/${albumId}/photos`, {
+                    method: "POST",
+                    body: formData
+                });
+                if (res.ok) uploaded++;
+            }
+
+            fileInput.value = "";
+            msgEl.textContent = `${uploaded} of ${files.length} photo(s) uploaded.`;
+            setTimeout(() => msgEl.textContent = "", 3000);
+            loadPhotos();
         }
 
         async function loadPhotos() {
