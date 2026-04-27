@@ -2,6 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Frames — Login</title>
     <style>
         body {
@@ -9,35 +10,43 @@
             display: flex;
             justify-content: center;
             align-items: center;
-            height: 100vh;
+            min-height: 100vh;
             margin: 0;
             background: #f5f5f5;
+            padding: 1rem;
+            box-sizing: border-box;
         }
         .login-box {
             background: white;
             padding: 2rem;
             border-radius: 8px;
             box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-            width: 320px;
+            width: 100%;
+            max-width: 360px;
+            box-sizing: border-box;
         }
         h1 { margin-top: 0; font-size: 1.5rem; }
+        label { font-size: 0.9rem; color: #555; }
         input {
             width: 100%;
-            padding: 0.5rem;
-            margin: 0.5rem 0 1rem 0;
+            padding: 0.65rem 0.5rem;
+            margin: 0.4rem 0 1rem 0;
             box-sizing: border-box;
             border: 1px solid #ccc;
             border-radius: 4px;
+            font-size: 1rem; /* prevents iOS auto-zoom on focus */
         }
         button {
             width: 100%;
-            padding: 0.6rem;
+            padding: 0.75rem;
             background: #333;
             color: white;
             border: none;
             border-radius: 4px;
             cursor: pointer;
+            font-size: 1rem;
         }
+        button:hover { background: #555; }
         #error-msg {
             color: red;
             font-size: 0.9rem;
@@ -52,21 +61,25 @@
         <p>Sign in to your account</p>
 
         <label>Email</label>
-        <input type="email" id="email" placeholder="admin@frames.com">
+        <input type="email" id="email" placeholder="admin@frames.com" autocomplete="email">
 
         <label>Password</label>
-        <input type="password" id="password" placeholder="••••••••">
+        <input type="password" id="password" placeholder="••••••••" autocomplete="current-password">
 
         <button onclick="handleLogin()">Sign in</button>
         <p id="error-msg">Invalid email or password.</p>
     </div>
 
     <script>
+        // Allow pressing Enter to submit
+        document.addEventListener("keydown", e => {
+            if (e.key === "Enter") handleLogin();
+        });
+
         async function handleLogin() {
             const email = document.getElementById("email").value;
             const password = document.getElementById("password").value;
 
-            // fetch() sends a POST request to our Flask /login route
             const response = await fetch("/", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
@@ -75,14 +88,12 @@
 
             if (response.ok) {
                 const data = await response.json();
-                // Redirect based on role returned from the server
                 if (data.role === "admin") {
                     window.location.href = "/admin";
                 } else {
                     window.location.href = "/dashboard";
                 }
             } else {
-                // Show the error message if login failed
                 document.getElementById("error-msg").style.display = "block";
             }
         }

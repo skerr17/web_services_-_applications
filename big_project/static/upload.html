@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Frames — Upload Photo</title>
+    <title>Frames — Upload Photos</title>
     <style>
         body {
             font-family: sans-serif;
@@ -13,21 +13,48 @@
             min-height: 100vh;
             margin: 0;
             background: #f5f5f5;
+            padding: 1rem;
+            box-sizing: border-box;
         }
         .box {
             background: white;
             padding: 2rem;
             border-radius: 8px;
             box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-            width: 320px;
+            width: 100%;
+            max-width: 380px;
+            box-sizing: border-box;
             text-align: center;
         }
         h1 { font-size: 1.4rem; margin-top: 0; }
-        p { color: #888; font-size: 0.9rem; }
-        input[type="file"] { margin: 1rem 0; width: 100%; }
+        p.subtitle { color: #888; font-size: 0.9rem; margin-bottom: 1.5rem; }
+
+        /* Custom file input — more tap-friendly on mobile */
+        .file-label {
+            display: block;
+            width: 100%;
+            padding: 0.75rem;
+            box-sizing: border-box;
+            border: 2px dashed #ccc;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.95rem;
+            color: #555;
+            margin-bottom: 0.5rem;
+            transition: border-color 0.2s;
+        }
+        .file-label:hover { border-color: #888; }
+        .file-label input[type="file"] { display: none; }
+        #file-name {
+            font-size: 0.8rem;
+            color: #888;
+            margin-bottom: 1rem;
+            min-height: 1.2rem;
+        }
+
         button {
             width: 100%;
-            padding: 0.6rem;
+            padding: 0.75rem;
             background: #333;
             color: white;
             border: none;
@@ -35,7 +62,9 @@
             cursor: pointer;
             font-size: 1rem;
         }
+        button:hover { background: #555; }
         button:disabled { background: #aaa; cursor: not-allowed; }
+
         #status { margin-top: 1rem; font-size: 0.9rem; min-height: 20px; }
         .success { color: green; }
         .error { color: red; }
@@ -44,53 +73,71 @@
 <body>
     <div class="box">
         <h1>📷 Share your photos</h1>
-        <p>Upload a photo to the event album</p>
+        <p class="subtitle">Upload photos to the event album</p>
 
-        <input type="file" id="photo-input" accept="image/*">
-        <button id="upload-btn" onclick="uploadPhoto()">Upload</button>
+        <label class="file-label">
+            Tap to choose photos
+            <input type="file" id="photo-input" accept="image/*" multiple>
+        </label>
+        <p id="file-name">No files selected</p>
+
+        <button id="upload-btn" onclick="uploadPhotos()">Upload</button>
         <p id="status"></p>
     </div>
 
     <script>
-        // Get the slug from the URL path e.g. /upload/johns-wedding -> johns-wedding
         const slug = window.location.pathname.split("/")[2];
         const statusEl = document.getElementById("status");
         const btn = document.getElementById("upload-btn");
+        const fileInput = document.getElementById("photo-input");
+        const fileNameEl = document.getElementById("file-name");
 
-        async function uploadPhoto() {
-            const fileInput = document.getElementById("photo-input");
+        // Update file count label when files are selected
+        fileInput.addEventListener("change", () => {
+            const count = fileInput.files.length;
+            if (count === 0) {
+                fileNameEl.textContent = "No files selected";
+            } else if (count === 1) {
+                fileNameEl.textContent = fileInput.files[0].name;
+            } else {
+                fileNameEl.textContent = `${count} photos selected`;
+            }
+        });
 
+        async function uploadPhotos() {
             if (!fileInput.files.length) {
-                statusEl.textContent = "Please select a photo first.";
+                statusEl.textContent = "Please select at least one photo.";
                 statusEl.className = "error";
                 return;
             }
 
-            // FormData is used for file uploads instead of JSON
-            const formData = new FormData();
-            formData.append("photo", fileInput.files[0]);
-
-            // Disable the button while uploading
+            const files = Array.from(fileInput.files);
             btn.disabled = true;
-            statusEl.textContent = "Uploading...";
             statusEl.className = "";
+            statusEl.textContent = `Uploading ${files.length} photo(s)...`;
 
-            const response = await fetch(`/upload/${slug}/photo`, {
-                method: "POST",
-                body: formData  // No Content-Type header needed — browser sets it automatically
-            });
-
-            if (response.ok) {
-                statusEl.textContent = "Photo uploaded successfully!";
-                statusEl.className = "success";
-                fileInput.value = ""; // Clear the file input
-            } else {
-                const data = await response.json();
-                statusEl.textContent = data.error || "Upload failed.";
-                statusEl.className = "error";
+            let uploaded = 0;
+            for (const file of files) {
+                const formData = new FormData();
+                formData.append("photo", file);
+                const response = await fetch(`/upload/${slug}/photo`, {
+                    method: "POST",
+                    body: formData
+                });
+                if (response.ok) uploaded++;
             }
 
+            fileInput.value = "";
+            fileNameEl.textContent = "No files selected";
             btn.disabled = false;
+
+            if (uploaded === files.length) {
+                statusEl.textContent = `${uploaded} photo(s) uploaded successfully!`;
+                statusEl.className = "success";
+            } else {
+                statusEl.textContent = `${uploaded} of ${files.length} uploaded. Some failed.`;
+                statusEl.className = "error";
+            }
         }
     </script>
 </body>
