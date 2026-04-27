@@ -242,6 +242,15 @@ def assign_organiser(album_id):
     db = get_db()
     if db.execute("SELECT id FROM albums WHERE id = ?", (album_id,)).fetchone() is None:
         return jsonify({"error": "Album not found"}), 404
+
+    # Check if this organiser is already assigned to a different album
+    existing = db.execute(
+        "SELECT id FROM albums WHERE organiser_id = ? AND id != ?",
+        (data["organiser_id"], album_id)
+    ).fetchone()
+    if existing:
+        return jsonify({"error": "This organiser is already assigned to another album"}), 409
+
     db.execute(
         "UPDATE albums SET organiser_id = ? WHERE id = ?",
         (data["organiser_id"], album_id)
