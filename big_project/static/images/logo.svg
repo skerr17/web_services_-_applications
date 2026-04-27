@@ -1,0 +1,8 @@
+<svg width="160" height="44" viewBox="0 0 160 44" xmlns="http://www.w3.org/2000/svg">
+  <rect x="2" y="2" width="40" height="40" rx="8" fill="#1a1a1a"/>
+  <rect x="9" y="9" width="26" height="26" rx="4" fill="white"/>
+  <circle cx="22" cy="22" r="7" fill="#1a1a1a"/>
+  <circle cx="22" cy="22" r="3" fill="white"/>
+  <rect x="26" y="4" width="8" height="5" rx="1.5" fill="white"/>
+  <text x="52" y="30" font-family="-apple-system, BlinkMacSystemFont, sans-serif" font-size="22" font-weight="600" fill="#1a1a1a" letter-spacing="-0.5">frames</text>
+</svg>

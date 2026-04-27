@@ -2,155 +2,109 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Frames — Admin</title>
-    <style>
-        body { font-family: sans-serif; max-width: 900px; margin: 2rem auto; padding: 0 1rem; }
-        h1 { font-size: 1.5rem; }
-        h2 { font-size: 1.1rem; margin-top: 2rem; }
-        .top-bar { display: flex; justify-content: space-between; align-items: center; }
-        button { padding: 0.5rem 1rem; cursor: pointer; }
-        input { padding: 0.5rem; margin: 0.3rem 0; width: 100%; box-sizing: border-box; }
-        .form-box { background: #f9f9f9; padding: 1rem; border-radius: 6px; margin-bottom: 1.5rem; }
-        .error { color: red; font-size: 0.9rem; }
-        .success { color: green; font-size: 0.9rem; }
-        .slug-hint { font-size: 0.8rem; color: #888; margin: 0 0 0.3rem; }
-
-        /* Album list */
-        .album-list { list-style: none; padding: 0; }
-        .album-item { background: white; border: 1px solid #ddd; border-radius: 6px;
-                      padding: 1rem; margin-bottom: 0.5rem; }
-        .album-footer { display: flex; gap: 0.5rem; margin-top: 0.75rem; align-items: center; }
-        .album-footer select { flex: 1; padding: 0.4rem; border: 1px solid #ddd; border-radius: 4px; }
-        .album-footer button { font-size: 0.85rem; padding: 0.4rem 0.75rem; }
-        .assigned { color: #888; font-size: 0.85rem; margin: 0.25rem 0 0; }
-
-        /* Album action buttons */
-        .album-actions { display: flex; gap: 0.5rem; margin-top: 0.5rem; }
-        .btn-view { font-size: 0.85rem; padding: 0.4rem 0.75rem; background: #333;
-                    color: white; border: none; border-radius: 4px; text-decoration: none;
-                    cursor: pointer; display: inline-block; }
-        .btn-delete { font-size: 0.85rem; padding: 0.4rem 0.75rem; background: white;
-                      color: #c00; border: 1px solid #fcc; border-radius: 4px; cursor: pointer; }
-        .btn-delete:hover { background: #fee; }
-
-        /* Organiser list */
-        .org-list { list-style: none; padding: 0; }
-        .org-item { background: white; border: 1px solid #ddd; border-radius: 6px;
-                    padding: 0.75rem 1rem; margin-bottom: 0.5rem;
-                    display: flex; justify-content: space-between; align-items: center; }
-        .org-item span { font-size: 0.9rem; }
-
-        /* QR table */
-        .qr-table-wrap { overflow-x: auto; margin-bottom: 2rem; }
-        table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
-        th { text-align: left; font-weight: 500; font-size: 0.8rem; color: #888;
-             padding: 0 12px 8px; border-bottom: 1px solid #eee; }
-        td { padding: 10px 12px; border-bottom: 1px solid #eee; vertical-align: middle; }
-        tr:last-child td { border-bottom: none; }
-        .token { font-family: monospace; background: #f3f3f3; padding: 3px 7px;
-                 border-radius: 4px; font-size: 0.85rem; }
-        .target { font-family: monospace; font-size: 0.85rem; color: #555; }
-        .update-row { display: flex; gap: 6px; align-items: center; }
-        .update-row select { flex: 1; padding: 0.35rem 0.5rem; font-size: 0.85rem;
-                             border: 1px solid #ddd; border-radius: 4px; }
-        .update-row button { padding: 0.35rem 0.75rem; font-size: 0.85rem; white-space: nowrap; }
-        .qr-msg { font-size: 0.8rem; margin-top: 4px; }
-    </style>
+    <link rel="stylesheet" href="/static/css/frames.css">
 </head>
 <body>
 
     <div class="top-bar">
-        <h1>Frames — Admin</h1>
-        <button onclick="handleLogout()">Logout</button>
+        <a class="logo" href="/admin">
+            <img src="/static/images/logo.svg" alt="Frames">
+        </a>
+        <nav>
+            <button class="btn btn-ghost" onclick="handleLogout()">Sign out</button>
+        </nav>
     </div>
 
-    <!-- Create Album Form -->
-    <div class="form-box">
-        <h2 style="margin-top:0">Create Album</h2>
-        <input type="text" id="album-name" placeholder="Album name (required)" oninput="autoSlug()">
-        <input type="text" id="album-desc" placeholder="Description (optional)">
-        <input type="date" id="album-date">
-        <p class="slug-hint">Slug (auto-generated, editable):</p>
-        <input type="text" id="album-slug" placeholder="e.g. johns-wedding">
-        <button onclick="createAlbum()">Create Album</button>
-        <p class="error" id="album-error"></p>
-    </div>
+    <div class="page">
 
-    <!-- Create Organiser Form -->
-    <div class="form-box">
-        <h2 style="margin-top:0">Create Organiser Account</h2>
-        <input type="email" id="org-email" placeholder="Email address">
-        <input type="password" id="org-password" placeholder="Temporary password">
-        <button onclick="createOrganiser()">Create Organiser</button>
-        <p class="error" id="org-error"></p>
-        <p class="success" id="org-success"></p>
-    </div>
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:1rem; margin-bottom:2rem;">
 
-    <!-- Album List -->
-    <h2>All Albums</h2>
-    <ul class="album-list" id="album-list">
-        <li>Loading...</li>
-    </ul>
+            <!-- Create Album -->
+            <div class="card">
+                <h2>Create album</h2>
+                <label>Album name</label>
+                <input type="text" id="album-name" placeholder="e.g. Smith Wedding" oninput="autoSlug()">
+                <label>Description</label>
+                <input type="text" id="album-desc" placeholder="Optional">
+                <label>Event date</label>
+                <input type="date" id="album-date">
+                <p class="slug-hint">Slug (auto-generated, editable)</p>
+                <input type="text" id="album-slug" placeholder="e.g. smith-wedding">
+                <button class="btn btn-primary" onclick="createAlbum()" style="width:100%;">Create album</button>
+                <p class="msg-error" id="album-error"></p>
+            </div>
 
-    <!-- Organiser List -->
-    <h2>All Organisers</h2>
-    <ul class="org-list" id="org-list">
-        <li>Loading...</li>
-    </ul>
+            <!-- Create Organiser -->
+            <div class="card">
+                <h2>Create organiser account</h2>
+                <label>Email address</label>
+                <input type="email" id="org-email" placeholder="organiser@example.com">
+                <label>Temporary password</label>
+                <input type="password" id="org-password" placeholder="••••••••">
+                <button class="btn btn-primary" onclick="createOrganiser()" style="width:100%;">Create organiser</button>
+                <p class="msg-error" id="org-error"></p>
+                <p class="msg-success" id="org-success"></p>
+            </div>
 
-    <!-- QR Redirects Table -->
-    <h2>QR Redirects</h2>
-    <div class="qr-table-wrap">
-        <table>
-            <thead>
-                <tr>
-                    <th>Album (token owner)</th>
-                    <th>Permanent token URL</th>
-                    <th>Currently points to</th>
-                    <th>Redirect to a different album</th>
-                </tr>
-            </thead>
-            <tbody id="qr-table-body">
-                <tr><td colspan="4">Loading...</td></tr>
-            </tbody>
-        </table>
+        </div>
+
+        <div class="section-header">
+            <h2>All albums</h2>
+        </div>
+        <ul class="album-list" id="album-list"><li>Loading...</li></ul>
+
+        <div class="section-header">
+            <h2>All organisers</h2>
+        </div>
+        <ul class="org-list" id="org-list"><li>Loading...</li></ul>
+
+        <div class="section-header">
+            <h2>QR redirects</h2>
+        </div>
+        <div class="qr-table-wrap">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Album</th>
+                        <th>Permanent token URL</th>
+                        <th>Currently points to</th>
+                        <th>Redirect to</th>
+                    </tr>
+                </thead>
+                <tbody id="qr-table-body">
+                    <tr><td colspan="4">Loading...</td></tr>
+                </tbody>
+            </table>
+        </div>
+
     </div>
 
     <script>
-        // Stores all albums for use in QR dropdown
         let allAlbums = [];
 
         document.addEventListener("DOMContentLoaded", loadAll);
 
-        // Auto-generate slug from album name
-        // Converts to lowercase, replaces spaces with hyphens, strips special chars
         function autoSlug() {
             const name = document.getElementById("album-name").value;
-            const slug = name
-                .toLowerCase()
-                .trim()
-                .replace(/[^a-z0-9\s-]/g, "")   // remove special chars
-                .replace(/\s+/g, "-")             // spaces to hyphens
-                .replace(/-+/g, "-");             // collapse multiple hyphens
-            document.getElementById("album-slug").value = slug;
+            document.getElementById("album-slug").value = name
+                .toLowerCase().trim()
+                .replace(/[^a-z0-9\s-]/g, "")
+                .replace(/\s+/g, "-")
+                .replace(/-+/g, "-");
         }
 
         async function loadAll() {
-            const [albumRes, orgRes] = await Promise.all([
-                fetch("/albums"),
-                fetch("/users")
-            ]);
+            const [albumRes, orgRes] = await Promise.all([fetch("/albums"), fetch("/users")]);
             allAlbums = await albumRes.json();
             const organisers = await orgRes.json();
 
             const qrResults = await Promise.all(
                 allAlbums.map(a => fetch(`/qr/${a.id}`).then(r => r.ok ? r.json() : null))
             );
-
             const qrMap = {};
-            qrResults.forEach((qr, i) => {
-                if (qr) qrMap[allAlbums[i].id] = qr;
-            });
+            qrResults.forEach((qr, i) => { if (qr) qrMap[allAlbums[i].id] = qr; });
 
             renderAlbums(allAlbums, organisers);
             renderOrganisers(organisers, allAlbums);
@@ -159,14 +113,9 @@
 
         function renderAlbums(albums, organisers) {
             const list = document.getElementById("album-list");
-            if (albums.length === 0) {
-                list.innerHTML = "<li>No albums yet.</li>";
-                return;
-            }
-            const orgOptions = `
-                <option value="">— Select organiser —</option>
-                ${organisers.map(o => `<option value="${o.id}">${o.email}</option>`).join("")}
-            `;
+            if (albums.length === 0) { list.innerHTML = "<li class='msg-muted'>No albums yet.</li>"; return; }
+            const orgOptions = `<option value="">— Select organiser —</option>
+                ${organisers.map(o => `<option value="${o.id}">${o.email}</option>`).join("")}`;
             list.innerHTML = albums.map(album => {
                 const assigned = organisers.find(o => o.id === album.organiser_id);
                 const assignedLabel = assigned
@@ -174,28 +123,24 @@
                     : "No organiser assigned";
                 return `
                     <li class="album-item">
-                        <strong>${album.name}</strong> — ${album.event_date || "No date"}<br>
+                        <strong>${album.name}</strong> &mdash; ${album.event_date || "No date"}<br>
                         <small>Slug: ${album.slug} | Created: ${album.created_at}</small>
                         <p class="assigned">${assignedLabel}</p>
                         <div class="album-actions">
-                            <a class="btn-view" href="/album?id=${album.id}">View Album</a>
-                            <button class="btn-delete" data-id="${album.id}" onclick="deleteAlbum(this)">Delete</button>
+                            <a class="btn btn-secondary" href="/album?id=${album.id}">View album</a>
+                            <button class="btn btn-danger" data-id="${album.id}" onclick="deleteAlbum(this)">Delete</button>
                         </div>
                         <div class="album-footer">
                             <select id="select-${album.id}">${orgOptions}</select>
-                            <button onclick="assignOrganiser(${album.id})">Assign</button>
+                            <button class="btn btn-secondary" onclick="assignOrganiser(${album.id})">Assign</button>
                         </div>
-                    </li>
-                `;
+                    </li>`;
             }).join("");
         }
 
         function renderOrganisers(organisers, albums) {
             const list = document.getElementById("org-list");
-            if (organisers.length === 0) {
-                list.innerHTML = "<li>No organisers yet.</li>";
-                return;
-            }
+            if (organisers.length === 0) { list.innerHTML = "<li class='msg-muted'>No organisers yet.</li>"; return; }
             list.innerHTML = organisers.map(org => {
                 const assignedAlbum = albums.find(a => a.organiser_id === org.id);
                 const albumLabel = assignedAlbum
@@ -203,38 +148,22 @@
                     : "No album assigned";
                 return `
                     <li class="org-item">
-                        <span>${org.email} — <small>${albumLabel}</small></span>
-                        <button class="btn-delete" data-id="${org.id}" onclick="deleteOrganiser(this)">Delete</button>
-                    </li>
-                `;
+                        <span>${org.email} &mdash; <small>${albumLabel}</small></span>
+                        <button class="btn btn-danger" data-id="${org.id}" onclick="deleteOrganiser(this)">Delete</button>
+                    </li>`;
             }).join("");
         }
 
         function renderQrTable(albums, qrMap) {
             const tbody = document.getElementById("qr-table-body");
             const base = window.location.origin;
-
-            if (albums.length === 0) {
-                tbody.innerHTML = "<tr><td colspan='4'>No albums yet.</td></tr>";
-                return;
-            }
-
+            if (albums.length === 0) { tbody.innerHTML = "<tr><td colspan='4'>No albums yet.</td></tr>"; return; }
             tbody.innerHTML = albums.map(album => {
                 const qr = qrMap[album.id];
-                if (!qr) return `
-                    <tr>
-                        <td>${album.name}</td>
-                        <td colspan="3" style="color:#aaa;">No redirect generated</td>
-                    </tr>
-                `;
-
-                // Dropdown of all albums to redirect to — excludes current target
-                const albumOptions = albums.map(a => `
-                    <option value="/upload/${a.slug}" ${qr.target_url === `/upload/${a.slug}` ? "selected" : ""}>
-                        ${a.name} (/upload/${a.slug})
-                    </option>
-                `).join("");
-
+                if (!qr) return `<tr><td>${album.name}</td><td colspan="3" style="color:#aaa;">No redirect generated</td></tr>`;
+                const albumOptions = albums.map(a =>
+                    `<option value="/upload/${a.slug}" ${qr.target_url === `/upload/${a.slug}` ? "selected" : ""}>${a.name}</option>`
+                ).join("");
                 return `
                     <tr>
                         <td>${album.name}</td>
@@ -243,74 +172,55 @@
                         <td>
                             <div class="update-row">
                                 <select id="qr-input-${album.id}">${albumOptions}</select>
-                                <button onclick="updateQr(${album.id})">Update</button>
+                                <button class="btn btn-secondary" onclick="updateQr(${album.id})">Update</button>
                             </div>
-                            <p class="qr-msg success" id="qr-ok-${album.id}"></p>
-                            <p class="qr-msg error" id="qr-err-${album.id}"></p>
+                            <p class="qr-msg msg-success" id="qr-ok-${album.id}"></p>
+                            <p class="qr-msg msg-error" id="qr-err-${album.id}"></p>
                         </td>
-                    </tr>
-                `;
+                    </tr>`;
             }).join("");
-        }
-
-        async function updateQr(albumId) {
-            // Now reads from a select instead of a text input
-            const select = document.getElementById(`qr-input-${albumId}`);
-            const targetUrl = select.value;
-            const okEl = document.getElementById(`qr-ok-${albumId}`);
-            const errEl = document.getElementById(`qr-err-${albumId}`);
-
-            const response = await fetch(`/qr/${albumId}`, {
-                method: "PATCH",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ target_url: targetUrl })
-            });
-
-            if (response.ok) {
-                okEl.textContent = "Redirect updated.";
-                errEl.textContent = "";
-                loadAll();
-            } else {
-                const data = await response.json();
-                errEl.textContent = data.error || "Failed to update.";
-                okEl.textContent = "";
-            }
         }
 
         async function deleteAlbum(btn) {
             const albumId = btn.dataset.id;
             if (!confirm("Delete this album? This will also delete all its photos.")) return;
-            const response = await fetch(`/albums/${albumId}`, { method: "DELETE" });
-            if (response.ok) {
-                loadAll();
-            } else {
-                alert("Failed to delete album.");
-            }
+            const res = await fetch(`/albums/${albumId}`, { method: "DELETE" });
+            if (res.ok) loadAll();
+            else alert("Failed to delete album.");
         }
 
         async function deleteOrganiser(btn) {
             const organiserId = btn.dataset.id;
             if (!confirm("Delete this organiser? This cannot be undone.")) return;
-            const response = await fetch(`/users/${organiserId}`, { method: "DELETE" });
-            if (response.ok) {
-                loadAll();
-            } else {
-                const data = await response.json();
-                alert(data.error || "Failed to delete organiser.");
-            }
+            const res = await fetch(`/users/${organiserId}`, { method: "DELETE" });
+            if (res.ok) loadAll();
+            else { const data = await res.json(); alert(data.error || "Failed to delete organiser."); }
+        }
+
+        async function updateQr(albumId) {
+            const select = document.getElementById(`qr-input-${albumId}`);
+            const okEl = document.getElementById(`qr-ok-${albumId}`);
+            const errEl = document.getElementById(`qr-err-${albumId}`);
+            const res = await fetch(`/qr/${albumId}`, {
+                method: "PATCH",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ target_url: select.value })
+            });
+            if (res.ok) { okEl.textContent = "Redirect updated."; errEl.textContent = ""; loadAll(); }
+            else { const data = await res.json(); errEl.textContent = data.error || "Failed."; okEl.textContent = ""; }
         }
 
         async function assignOrganiser(albumId) {
             const select = document.getElementById(`select-${albumId}`);
             const organiserId = select.value;
             if (!organiserId) { alert("Please select an organiser first."); return; }
-            const response = await fetch(`/albums/${albumId}/assign`, {
+            const res = await fetch(`/albums/${albumId}/assign`, {
                 method: "PATCH",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ organiser_id: parseInt(organiserId) })
             });
-            if (response.ok) { loadAll(); }
-            else { const data = await response.json(); alert(data.error || "Failed to assign."); }
+            if (res.ok) loadAll();
+            else { const data = await res.json(); alert(data.error || "Failed to assign."); }
         }
 
         async function createAlbum() {
@@ -320,22 +230,16 @@
             const slug = document.getElementById("album-slug").value.trim();
             const errorEl = document.getElementById("album-error");
             if (!name || !slug) { errorEl.textContent = "Name and slug are required."; return; }
-            const response = await fetch("/albums", {
+            const res = await fetch("/albums", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ name, description, event_date, slug })
             });
-            if (response.ok) {
-                document.getElementById("album-name").value = "";
-                document.getElementById("album-desc").value = "";
-                document.getElementById("album-date").value = "";
-                document.getElementById("album-slug").value = "";
+            if (res.ok) {
+                ["album-name","album-desc","album-date","album-slug"].forEach(id => document.getElementById(id).value = "");
                 errorEl.textContent = "";
                 loadAll();
-            } else {
-                const data = await response.json();
-                errorEl.textContent = data.error || "Failed to create album.";
-            }
+            } else { const data = await res.json(); errorEl.textContent = data.error || "Failed to create album."; }
         }
 
         async function createOrganiser() {
@@ -343,27 +247,19 @@
             const password = document.getElementById("org-password").value.trim();
             const errorEl = document.getElementById("org-error");
             const successEl = document.getElementById("org-success");
-            if (!email || !password) {
-                errorEl.textContent = "Email and password are required.";
-                successEl.textContent = "";
-                return;
-            }
-            const response = await fetch("/users", {
+            if (!email || !password) { errorEl.textContent = "Email and password are required."; successEl.textContent = ""; return; }
+            const res = await fetch("/users", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ email, password })
             });
-            if (response.ok) {
+            if (res.ok) {
                 document.getElementById("org-email").value = "";
                 document.getElementById("org-password").value = "";
                 errorEl.textContent = "";
                 successEl.textContent = `Organiser ${email} created successfully.`;
                 loadAll();
-            } else {
-                const data = await response.json();
-                successEl.textContent = "";
-                errorEl.textContent = data.error || "Failed to create organiser.";
-            }
+            } else { const data = await res.json(); successEl.textContent = ""; errorEl.textContent = data.error || "Failed to create organiser."; }
         }
 
         async function handleLogout() {
@@ -371,6 +267,5 @@
             window.location.href = "/";
         }
     </script>
-
 </body>
 </html>

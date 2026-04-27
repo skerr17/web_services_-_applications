@@ -4,85 +4,87 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Frames — Upload Photos</title>
+    <link rel="stylesheet" href="/static/css/frames.css">
     <style>
         body {
-            font-family: sans-serif;
             display: flex;
+            flex-direction: column;
             justify-content: center;
             align-items: center;
             min-height: 100vh;
-            margin: 0;
-            background: #f5f5f5;
-            padding: 1rem;
-            box-sizing: border-box;
+            padding: 1.5rem;
         }
-        .box {
-            background: white;
-            padding: 2rem;
-            border-radius: 8px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        .upload-wrap {
             width: 100%;
-            max-width: 380px;
-            box-sizing: border-box;
+            max-width: 400px;
             text-align: center;
         }
-        h1 { font-size: 1.4rem; margin-top: 0; }
-        p.subtitle { color: #888; font-size: 0.9rem; margin-bottom: 1.5rem; }
-
-        /* Custom file input — more tap-friendly on mobile */
-        .file-label {
-            display: block;
-            width: 100%;
-            padding: 0.75rem;
-            box-sizing: border-box;
-            border: 2px dashed #ccc;
-            border-radius: 6px;
-            cursor: pointer;
-            font-size: 0.95rem;
-            color: #555;
-            margin-bottom: 0.5rem;
-            transition: border-color 0.2s;
+        .upload-logo {
+            margin-bottom: 2rem;
         }
-        .file-label:hover { border-color: #888; }
-        .file-label input[type="file"] { display: none; }
+        .upload-logo img { height: 36px; }
+        .upload-card {
+            background: white;
+            border: 1px solid #e8e8e8;
+            border-radius: 10px;
+            padding: 2rem;
+        }
+        .camera-icon {
+            width: 48px;
+            height: 48px;
+            background: #1a1a1a;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 1rem;
+        }
+        .upload-card h1 {
+            font-size: 1.2rem;
+            font-weight: 600;
+            margin: 0 0 0.4rem;
+        }
+        .upload-card .btn-primary {
+            width: 100%;
+            padding: 0.65rem;
+            font-size: 1rem;
+            margin-top: 0.5rem;
+        }
         #file-name {
             font-size: 0.8rem;
             color: #888;
             margin-bottom: 1rem;
             min-height: 1.2rem;
         }
-
-        button {
-            width: 100%;
-            padding: 0.75rem;
-            background: #333;
-            color: white;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 1rem;
-        }
-        button:hover { background: #555; }
-        button:disabled { background: #aaa; cursor: not-allowed; }
-
-        #status { margin-top: 1rem; font-size: 0.9rem; min-height: 20px; }
-        .success { color: green; }
-        .error { color: red; }
+        #status { margin-top: 1rem; font-size: 0.9rem; min-height: 1.2rem; }
     </style>
 </head>
 <body>
-    <div class="box">
-        <h1>📷 Share your photos</h1>
-        <p class="subtitle">Upload photos to the event album</p>
+    <div class="upload-wrap">
+        <div class="upload-logo">
+            <img src="/static/images/logo.svg" alt="Frames" height="44">
+        </div>
+        <div class="upload-card">
+            <div class="camera-icon">
+                <svg width="26" height="26" viewBox="0 0 26 26" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <rect x="2" y="7" width="22" height="16" rx="3" fill="white"/>
+                    <circle cx="13" cy="15" r="5" fill="#1a1a1a"/>
+                    <circle cx="13" cy="15" r="2" fill="white"/>
+                    <rect x="9" y="4" width="6" height="4" rx="1" fill="white"/>
+                </svg>
+            </div>
+            <h1>Share your photos</h1>
+            <p>Upload photos to the event album</p>
 
-        <label class="file-label">
-            Tap to choose photos
-            <input type="file" id="photo-input" accept="image/*" multiple>
-        </label>
-        <p id="file-name">No files selected</p>
+            <label class="file-label">
+                Tap to choose photos
+                <input type="file" id="photo-input" accept="image/*" multiple>
+            </label>
+            <p id="file-name">No files selected</p>
 
-        <button id="upload-btn" onclick="uploadPhotos()">Upload</button>
-        <p id="status"></p>
+            <button class="btn btn-primary" id="upload-btn" onclick="uploadPhotos()">Upload</button>
+            <p id="status"></p>
+        </div>
     </div>
 
     <script>
@@ -92,39 +94,30 @@
         const fileInput = document.getElementById("photo-input");
         const fileNameEl = document.getElementById("file-name");
 
-        // Update file count label when files are selected
         fileInput.addEventListener("change", () => {
             const count = fileInput.files.length;
-            if (count === 0) {
-                fileNameEl.textContent = "No files selected";
-            } else if (count === 1) {
-                fileNameEl.textContent = fileInput.files[0].name;
-            } else {
-                fileNameEl.textContent = `${count} photos selected`;
-            }
+            if (count === 0) fileNameEl.textContent = "No files selected";
+            else if (count === 1) fileNameEl.textContent = fileInput.files[0].name;
+            else fileNameEl.textContent = `${count} photos selected`;
         });
 
         async function uploadPhotos() {
             if (!fileInput.files.length) {
                 statusEl.textContent = "Please select at least one photo.";
-                statusEl.className = "error";
+                statusEl.className = "msg-error";
                 return;
             }
-
             const files = Array.from(fileInput.files);
             btn.disabled = true;
-            statusEl.className = "";
+            statusEl.className = "msg-muted";
             statusEl.textContent = `Uploading ${files.length} photo(s)...`;
 
             let uploaded = 0;
             for (const file of files) {
                 const formData = new FormData();
                 formData.append("photo", file);
-                const response = await fetch(`/upload/${slug}/photo`, {
-                    method: "POST",
-                    body: formData
-                });
-                if (response.ok) uploaded++;
+                const res = await fetch(`/upload/${slug}/photo`, { method: "POST", body: formData });
+                if (res.ok) uploaded++;
             }
 
             fileInput.value = "";
@@ -133,10 +126,10 @@
 
             if (uploaded === files.length) {
                 statusEl.textContent = `${uploaded} photo(s) uploaded successfully!`;
-                statusEl.className = "success";
+                statusEl.className = "msg-success";
             } else {
                 statusEl.textContent = `${uploaded} of ${files.length} uploaded. Some failed.`;
-                statusEl.className = "error";
+                statusEl.className = "msg-error";
             }
         }
     </script>

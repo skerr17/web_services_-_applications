@@ -1,0 +1,367 @@
+/* frames.css — shared styles for all Frames pages */
+
+*, *::before, *::after { box-sizing: border-box; }
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+    background: #f5f5f5;
+    color: #1a1a1a;
+    margin: 0;
+    padding: 0;
+    -webkit-font-smoothing: antialiased;
+}
+
+/* ── Top bar ── */
+.top-bar {
+    background: white;
+    border-bottom: 1px solid #e8e8e8;
+    padding: 0 2rem;
+    height: 56px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+}
+
+.top-bar .logo {
+    display: flex;
+    align-items: center;
+    text-decoration: none;
+}
+
+.top-bar .logo img {
+    height: 44px;
+    width: auto;
+}
+
+.top-bar nav {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+/* ── Page container ── */
+.page {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 2rem 1.5rem;
+}
+
+/* ── Typography ── */
+h1 { font-size: 1.4rem; font-weight: 600; margin: 0 0 0.25rem; }
+h2 { font-size: 1rem; font-weight: 600; margin: 0 0 1rem; }
+p  { margin: 0 0 1rem; color: #555; font-size: 0.9rem; }
+
+/* ── Buttons ── */
+.btn {
+    display: inline-block;
+    padding: 0.5rem 1rem;
+    font-size: 0.875rem;
+    font-weight: 500;
+    border-radius: 6px;
+    cursor: pointer;
+    text-decoration: none;
+    border: none;
+    transition: background 0.15s, color 0.15s;
+    white-space: nowrap;
+}
+
+.btn-primary {
+    background: #1a1a1a;
+    color: white;
+}
+.btn-primary:hover { background: #333; }
+
+.btn-secondary {
+    background: white;
+    color: #1a1a1a;
+    border: 1px solid #d0d0d0;
+}
+.btn-secondary:hover { background: #f9f9f9; }
+
+.btn-danger {
+    background: white;
+    color: #c00;
+    border: 1px solid #fcc;
+}
+.btn-danger:hover { background: #fee; }
+
+.btn-ghost {
+    background: none;
+    color: #1a1a1a;
+    border: 1px solid #d0d0d0;
+    padding: 0.35rem 0.8rem;
+    font-size: 0.8rem;
+}
+.btn-ghost:hover { background: #f5f5f5; }
+
+/* ── Form elements ── */
+input[type="text"],
+input[type="email"],
+input[type="password"],
+input[type="date"],
+select,
+textarea {
+    width: 100%;
+    padding: 0.6rem 0.75rem;
+    font-size: 1rem;
+    border: 1px solid #d0d0d0;
+    border-radius: 6px;
+    background: white;
+    color: #1a1a1a;
+    margin-bottom: 0.75rem;
+    transition: border-color 0.15s;
+    -webkit-appearance: none;
+}
+
+input:focus, select:focus, textarea:focus {
+    outline: none;
+    border-color: #1a1a1a;
+}
+
+label {
+    display: block;
+    font-size: 0.8rem;
+    font-weight: 500;
+    color: #555;
+    margin-bottom: 0.25rem;
+}
+
+/* ── Cards ── */
+.card {
+    background: white;
+    border: 1px solid #e8e8e8;
+    border-radius: 8px;
+    padding: 1.25rem;
+    margin-bottom: 1rem;
+}
+
+.card h2 { margin-bottom: 0.75rem; }
+
+/* ── Section header ── */
+.section-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin: 2rem 0 1rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid #e8e8e8;
+}
+
+.section-header h2 { margin: 0; }
+
+/* ── Action row ── */
+.action-row {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+    flex-wrap: wrap;
+    margin-bottom: 1.5rem;
+}
+
+.copy-confirm {
+    font-size: 0.8rem;
+    color: #2a7a2a;
+    opacity: 0;
+    transition: opacity 0.3s;
+}
+.copy-confirm.show { opacity: 1; }
+
+/* ── Status messages ── */
+.msg-error  { color: #c00; font-size: 0.85rem; margin-top: 0.5rem; }
+.msg-success { color: #2a7a2a; font-size: 0.85rem; margin-top: 0.5rem; }
+.msg-muted  { color: #888; font-size: 0.85rem; }
+
+/* ── Photo grid ── */
+.photo-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 1rem;
+}
+
+.photo-card {
+    border: 1px solid #e8e8e8;
+    border-radius: 8px;
+    overflow: hidden;
+    background: white;
+}
+
+.photo-card img {
+    width: 100%;
+    height: 160px;
+    object-fit: cover;
+    display: block;
+}
+
+.photo-card .photo-actions {
+    display: flex;
+    gap: 0.5rem;
+    padding: 0.6rem;
+}
+
+.photo-card .photo-actions a,
+.photo-card .photo-actions button {
+    flex: 1;
+    padding: 0.35rem 0.5rem;
+    font-size: 0.8rem;
+    text-align: center;
+    border-radius: 4px;
+    cursor: pointer;
+    text-decoration: none;
+}
+
+.photo-card .photo-actions a {
+    background: #1a1a1a;
+    color: white;
+    border: none;
+}
+
+.photo-card .photo-actions button {
+    background: white;
+    color: #c00;
+    border: 1px solid #fcc;
+}
+
+.photo-card .photo-actions button:hover { background: #fee; }
+
+/* ── Album list ── */
+.album-list { list-style: none; padding: 0; margin: 0; }
+
+.album-item {
+    background: white;
+    border: 1px solid #e8e8e8;
+    border-radius: 8px;
+    padding: 1rem 1.25rem;
+    margin-bottom: 0.75rem;
+}
+
+.album-item strong { font-size: 0.95rem; }
+.album-item small  { color: #888; font-size: 0.8rem; }
+.album-item .assigned { color: #888; font-size: 0.85rem; margin: 0.25rem 0 0.75rem; }
+
+.album-actions { display: flex; gap: 0.5rem; margin-bottom: 0.75rem; }
+
+.album-footer {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+}
+
+.album-footer select {
+    flex: 1;
+    margin: 0;
+    font-size: 0.85rem;
+    padding: 0.4rem 0.5rem;
+}
+
+/* ── Organiser list ── */
+.org-list { list-style: none; padding: 0; margin: 0; }
+
+.org-item {
+    background: white;
+    border: 1px solid #e8e8e8;
+    border-radius: 8px;
+    padding: 0.75rem 1.25rem;
+    margin-bottom: 0.5rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.9rem;
+}
+
+/* ── QR table ── */
+.qr-table-wrap { overflow-x: auto; margin-bottom: 2rem; }
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.875rem;
+    background: white;
+    border-radius: 8px;
+    overflow: hidden;
+    border: 1px solid #e8e8e8;
+}
+
+th {
+    text-align: left;
+    font-weight: 500;
+    font-size: 0.75rem;
+    color: #888;
+    padding: 0.75rem 1rem;
+    border-bottom: 1px solid #e8e8e8;
+    background: #fafafa;
+}
+
+td {
+    padding: 0.75rem 1rem;
+    border-bottom: 1px solid #f0f0f0;
+    vertical-align: middle;
+}
+
+tr:last-child td { border-bottom: none; }
+
+.token {
+    font-family: monospace;
+    background: #f5f5f5;
+    padding: 3px 7px;
+    border-radius: 4px;
+    font-size: 0.8rem;
+}
+
+.target { font-family: monospace; font-size: 0.8rem; color: #555; }
+
+.update-row { display: flex; gap: 6px; align-items: center; }
+.update-row select {
+    flex: 1;
+    margin: 0;
+    padding: 0.35rem 0.5rem;
+    font-size: 0.8rem;
+}
+.qr-msg { font-size: 0.8rem; margin-top: 4px; }
+
+/* ── Upload file input ── */
+.file-label {
+    display: block;
+    width: 100%;
+    padding: 0.75rem;
+    border: 2px dashed #d0d0d0;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    color: #555;
+    text-align: center;
+    transition: border-color 0.2s;
+    margin-bottom: 0.5rem;
+}
+.file-label:hover { border-color: #1a1a1a; }
+.file-label input[type="file"] { display: none; }
+
+/* ── Album info block ── */
+.album-info {
+    background: white;
+    border: 1px solid #e8e8e8;
+    border-radius: 8px;
+    padding: 1rem 1.25rem;
+    margin-bottom: 1.5rem;
+}
+
+.album-info .album-name { font-size: 1rem; font-weight: 600; margin: 0 0 0.25rem; }
+.album-info .album-meta { font-size: 0.85rem; color: #888; margin: 0; }
+
+/* ── Slug hint ── */
+.slug-hint { font-size: 0.75rem; color: #888; margin: 0 0 0.25rem; }
+
+/* ── QR image ── */
+.qr-label { font-size: 0.8rem; color: #888; margin: 0 0 0.5rem; }
+
+/* ── Responsive ── */
+@media (max-width: 600px) {
+    .top-bar { padding: 0 1rem; }
+    .page { padding: 1.25rem 1rem; }
+    .photo-grid { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); }
+    .album-footer { flex-wrap: wrap; }
+    table { font-size: 0.8rem; }
+    th, td { padding: 0.6rem 0.75rem; }
+}
