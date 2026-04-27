@@ -13,6 +13,7 @@
         .form-box { background: #f9f9f9; padding: 1rem; border-radius: 6px; margin-bottom: 1.5rem; }
         .error { color: red; font-size: 0.9rem; }
         .success { color: green; font-size: 0.9rem; }
+        .slug-hint { font-size: 0.8rem; color: #888; margin: 0 0 0.3rem; }
 
         /* Album list */
         .album-list { list-style: none; padding: 0; }
@@ -50,8 +51,8 @@
                  border-radius: 4px; font-size: 0.85rem; }
         .target { font-family: monospace; font-size: 0.85rem; color: #555; }
         .update-row { display: flex; gap: 6px; align-items: center; }
-        .update-row input { width: 180px; padding: 0.35rem 0.5rem; font-size: 0.85rem;
-                            border: 1px solid #ddd; border-radius: 4px; margin: 0; }
+        .update-row select { flex: 1; padding: 0.35rem 0.5rem; font-size: 0.85rem;
+                             border: 1px solid #ddd; border-radius: 4px; }
         .update-row button { padding: 0.35rem 0.75rem; font-size: 0.85rem; white-space: nowrap; }
         .qr-msg { font-size: 0.8rem; margin-top: 4px; }
     </style>
@@ -66,10 +67,11 @@
     <!-- Create Album Form -->
     <div class="form-box">
         <h2 style="margin-top:0">Create Album</h2>
-        <input type="text" id="album-name" placeholder="Album name (required)">
+        <input type="text" id="album-name" placeholder="Album name (required)" oninput="autoSlug()">
         <input type="text" id="album-desc" placeholder="Description (optional)">
         <input type="date" id="album-date">
-        <input type="text" id="album-slug" placeholder="Slug e.g. johns-wedding">
+        <p class="slug-hint">Slug (auto-generated, editable):</p>
+        <input type="text" id="album-slug" placeholder="e.g. johns-wedding">
         <button onclick="createAlbum()">Create Album</button>
         <p class="error" id="album-error"></p>
     </div>
@@ -102,10 +104,10 @@
         <table>
             <thead>
                 <tr>
-                    <th>Album</th>
+                    <th>Album (token owner)</th>
                     <th>Permanent token URL</th>
                     <th>Currently points to</th>
-                    <th>Update target</th>
+                    <th>Redirect to a different album</th>
                 </tr>
             </thead>
             <tbody id="qr-table-body">
@@ -115,28 +117,44 @@
     </div>
 
     <script>
+        // Stores all albums for use in QR dropdown
+        let allAlbums = [];
+
         document.addEventListener("DOMContentLoaded", loadAll);
+
+        // Auto-generate slug from album name
+        // Converts to lowercase, replaces spaces with hyphens, strips special chars
+        function autoSlug() {
+            const name = document.getElementById("album-name").value;
+            const slug = name
+                .toLowerCase()
+                .trim()
+                .replace(/[^a-z0-9\s-]/g, "")   // remove special chars
+                .replace(/\s+/g, "-")             // spaces to hyphens
+                .replace(/-+/g, "-");             // collapse multiple hyphens
+            document.getElementById("album-slug").value = slug;
+        }
 
         async function loadAll() {
             const [albumRes, orgRes] = await Promise.all([
                 fetch("/albums"),
                 fetch("/users")
             ]);
-            const albums = await albumRes.json();
+            allAlbums = await albumRes.json();
             const organisers = await orgRes.json();
 
             const qrResults = await Promise.all(
-                albums.map(a => fetch(`/qr/${a.id}`).then(r => r.ok ? r.json() : null))
+                allAlbums.map(a => fetch(`/qr/${a.id}`).then(r => r.ok ? r.json() : null))
             );
 
             const qrMap = {};
             qrResults.forEach((qr, i) => {
-                if (qr) qrMap[albums[i].id] = qr;
+                if (qr) qrMap[allAlbums[i].id] = qr;
             });
 
-            renderAlbums(albums, organisers);
-            renderOrganisers(organisers, albums);
-            renderQrTable(albums, qrMap);
+            renderAlbums(allAlbums, organisers);
+            renderOrganisers(organisers, allAlbums);
+            renderQrTable(allAlbums, qrMap);
         }
 
         function renderAlbums(albums, organisers) {
@@ -209,6 +227,14 @@
                         <td colspan="3" style="color:#aaa;">No redirect generated</td>
                     </tr>
                 `;
+
+                // Dropdown of all albums to redirect to — excludes current target
+                const albumOptions = albums.map(a => `
+                    <option value="/upload/${a.slug}" ${qr.target_url === `/upload/${a.slug}` ? "selected" : ""}>
+                        ${a.name} (/upload/${a.slug})
+                    </option>
+                `).join("");
+
                 return `
                     <tr>
                         <td>${album.name}</td>
@@ -216,8 +242,7 @@
                         <td><span class="target">${qr.target_url}</span></td>
                         <td>
                             <div class="update-row">
-                                <input type="text" id="qr-input-${album.id}"
-                                       placeholder="e.g. /upload/${album.slug}">
+                                <select id="qr-input-${album.id}">${albumOptions}</select>
                                 <button onclick="updateQr(${album.id})">Update</button>
                             </div>
                             <p class="qr-msg success" id="qr-ok-${album.id}"></p>
@@ -228,8 +253,30 @@
             }).join("");
         }
 
-        // Uses data-id attribute on the button instead of passing strings through onclick
-        // This avoids breakage when album names contain apostrophes or special characters
+        async function updateQr(albumId) {
+            // Now reads from a select instead of a text input
+            const select = document.getElementById(`qr-input-${albumId}`);
+            const targetUrl = select.value;
+            const okEl = document.getElementById(`qr-ok-${albumId}`);
+            const errEl = document.getElementById(`qr-err-${albumId}`);
+
+            const response = await fetch(`/qr/${albumId}`, {
+                method: "PATCH",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ target_url: targetUrl })
+            });
+
+            if (response.ok) {
+                okEl.textContent = "Redirect updated.";
+                errEl.textContent = "";
+                loadAll();
+            } else {
+                const data = await response.json();
+                errEl.textContent = data.error || "Failed to update.";
+                okEl.textContent = "";
+            }
+        }
+
         async function deleteAlbum(btn) {
             const albumId = btn.dataset.id;
             if (!confirm("Delete this album? This will also delete all its photos.")) return;
@@ -250,35 +297,6 @@
             } else {
                 const data = await response.json();
                 alert(data.error || "Failed to delete organiser.");
-            }
-        }
-
-        async function updateQr(albumId) {
-            const input = document.getElementById(`qr-input-${albumId}`);
-            const targetUrl = input.value.trim();
-            const okEl = document.getElementById(`qr-ok-${albumId}`);
-            const errEl = document.getElementById(`qr-err-${albumId}`);
-
-            if (!targetUrl) {
-                errEl.textContent = "Please enter a target URL.";
-                return;
-            }
-
-            const response = await fetch(`/qr/${albumId}`, {
-                method: "PATCH",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ target_url: targetUrl })
-            });
-
-            if (response.ok) {
-                okEl.textContent = "Redirect updated.";
-                errEl.textContent = "";
-                input.value = "";
-                loadAll();
-            } else {
-                const data = await response.json();
-                errEl.textContent = data.error || "Failed to update.";
-                okEl.textContent = "";
             }
         }
 
