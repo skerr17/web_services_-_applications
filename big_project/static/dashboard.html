@@ -49,10 +49,60 @@
 
     </div>
 
+    <!-- Lightbox -->
+    <div class="lightbox" id="lightbox">
+        <button class="lightbox-close" onclick="closeLightbox()">×</button>
+        <button class="lightbox-arrow prev" onclick="lightboxNav(-1)">‹</button>
+        <img id="lightbox-img" src="" alt="Photo">
+        <button class="lightbox-arrow next" onclick="lightboxNav(1)">›</button>
+        <span class="lightbox-counter" id="lightbox-counter"></span>
+    </div>
+
     <script>
         let albumId = null;
         let shareUrl = "";
 
+        // ── Lightbox state ──
+        let lightboxPhotos = [];
+        let lightboxIndex  = 0;
+
+        function openLightbox(index) {
+            lightboxIndex = index;
+            updateLightbox();
+            document.getElementById("lightbox").classList.add("open");
+        }
+
+        function closeLightbox() {
+            document.getElementById("lightbox").classList.remove("open");
+        }
+
+        function lightboxNav(direction) {
+            lightboxIndex = (lightboxIndex + direction + lightboxPhotos.length) % lightboxPhotos.length;
+            updateLightbox();
+        }
+
+        function updateLightbox() {
+            const photo = lightboxPhotos[lightboxIndex];
+            document.getElementById("lightbox-img").src = `/static/uploads/${photo.filename}`;
+            document.getElementById("lightbox-counter").textContent =
+                `${lightboxIndex + 1} / ${lightboxPhotos.length}`;
+        }
+
+        // Keyboard navigation
+        document.addEventListener("keydown", e => {
+            const lb = document.getElementById("lightbox");
+            if (!lb.classList.contains("open")) return;
+            if (e.key === "ArrowRight") lightboxNav(1);
+            if (e.key === "ArrowLeft")  lightboxNav(-1);
+            if (e.key === "Escape")     closeLightbox();
+        });
+
+        // Click outside photo to close
+        document.getElementById("lightbox").addEventListener("click", e => {
+            if (e.target === document.getElementById("lightbox")) closeLightbox();
+        });
+
+        // ── Dashboard ──
         document.addEventListener("DOMContentLoaded", loadDashboard);
 
         async function loadDashboard() {
@@ -124,9 +174,14 @@
             }
 
             status.textContent = `${photos.length} photo(s)`;
-            grid.innerHTML = photos.map(photo => `
+
+            // Store photos array for lightbox navigation
+            lightboxPhotos = photos;
+
+            grid.innerHTML = photos.map((photo, index) => `
                 <div class="photo-card" id="card-${photo.id}">
-                    <img src="/static/uploads/${photo.filename}" alt="photo">
+                    <img src="/static/uploads/${photo.filename}" alt="photo"
+                         ondblclick="openLightbox(${index})" style="cursor:zoom-in;">
                     <div class="photo-actions">
                         <a href="/static/uploads/${photo.filename}" download="${photo.filename}">Download</a>
                         <button onclick="deletePhoto(${photo.id})">Delete</button>
