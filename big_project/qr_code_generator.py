@@ -1,7 +1,8 @@
 # QR Code Generator
 # This program generates a QR Code for a given URL of a photo album. 
-# It uses the qrcode library to create the QR code 
+# It uses the segno library to create the QR code 
 # and uses io to save the image as bytes.
+# Author: Stephen Kerr
 
 import segno
 import io

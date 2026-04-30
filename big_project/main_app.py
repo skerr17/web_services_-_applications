@@ -1,5 +1,5 @@
 # Frames - Photo sharing web application
-# author: Stephen Kerr
+# Author: Stephen Kerr
 
 import os # for file handling and path operations
 import sqlite3 # for database interactions
@@ -9,10 +9,12 @@ import sqlite3 # for database interactions
 #   session for user sessions, redirect and url_for for navigation
 # response for serving QR code images
 from flask import Flask, jsonify, request, g, send_from_directory, session, redirect, url_for, Response
+
+# see werkzeug documentation here https://werkzeug.palletsprojects.com/en/stable/
 from werkzeug.utils import secure_filename # for safely handling uploaded file names
 from werkzeug.security import generate_password_hash, check_password_hash # for password hashing 
-from functools import wraps # for creating decorators (e.g., for authentication)
-import secrets # for generating secure tokens
+from functools import wraps # for creating authentication decorators 
+import secrets # for generating secure tokens (used in filenames and QR tokens)
 
 
 from config import keys, admin_credentials # Import configuration variables
@@ -91,6 +93,7 @@ def init_db():
     """)
     db.commit()
 
+# checks if uploaded file has an allowed extension by looking at the filename and comparing it to the allowed list 
 def allowed_file(filename):
     return "." in filename and filename.rsplit(".", 1)[1].lower() in ALLOWED_EXTENSIONS
 
@@ -489,7 +492,7 @@ def upload_photo(album_id):
     file = request.files["photo"]
     if file.filename == "" or not allowed_file(file.filename):
         return jsonify({"error": "Invalid file type"}), 400
-    filename = secrets.token_hex(6) + "_" + secure_filename(file.filename)  # also fix collision here
+    filename = secrets.token_hex(6) + "_" + secure_filename(file.filename)  # prefix prevents filename collisions
     filepath = os.path.join(UPLOAD_FOLDER, filename)
     file.save(filepath)
     db = get_db()
