@@ -537,4 +537,4 @@ if __name__ == "__main__":
     with app.app_context():
         init_db()
         seed_admin()
-    app.run(debug=True, use_reloader=False)
+    app.run(debug=False, use_reloader=False)
