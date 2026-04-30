@@ -1,6 +1,7 @@
 # Frames - Photo sharing web application
 # Author: Stephen Kerr
 
+import email
 import os # for file handling and path operations
 import sqlite3 # for database interactions
 # Flask framework and utilities 
@@ -182,13 +183,19 @@ def create_organiser():
     data = request.get_json()
     if not data or "email" not in data or "password" not in data:
         return jsonify({"error": "email and password are required"}), 400
+    
+    # basic email validation to catch obvious mistakes (not comprehensive)
+    email = data["email"].strip()
+    if "@" not in email or "." not in email.split("@")[-1]:
+        return jsonify({"error": "Invalid email address"}), 400
+    
     db = get_db()
     # Check if email already exists
-    if db.execute("SELECT id FROM users WHERE email = ?", (data["email"],)).fetchone():
+    if db.execute("SELECT id FROM users WHERE email = ?", (email,)).fetchone():
         return jsonify({"error": "Email already in use"}), 409
     db.execute(
         "INSERT INTO users (email, password_hash, role) VALUES (?, ?, ?)",
-        (data["email"], generate_password_hash(data["password"]), "organiser")
+        (email, generate_password_hash(data["password"]), "organiser")
     )
     db.commit()
     return jsonify({"message": "Organiser created"}), 201
