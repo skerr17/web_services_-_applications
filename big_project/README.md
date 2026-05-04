@@ -6,6 +6,21 @@ This repository contains the big project submission for the module ***Web Servic
 
 **Frames** is a Flask-based event photo sharing web application. The idea is simple an event organiser prints a QR code, guests scan it on their phones and upload photos directly to the event album, and the organiser can view, download and manage everything from their dashboard. No app download required for guests.
 
+ 
+> **Live hosted version:** [https://stephenk17.pythonanywhere.com](https://stephenk17.pythonanywhere.com)
+
+Logins per user role to test the hosted web app: 
+- Admin: 
+    - Email: admin@frames.com
+    - Password: changeme123
+
+- Organiser: 
+    - Email: andrew@lecturer.com
+    - Password: bestapp100
+
+- Guest:
+    - No login required but need to have an upload link / QR code.
+
 ---
 
 ## Technologies Used
@@ -13,7 +28,7 @@ This repository contains the big project submission for the module ***Web Servic
 - Flask & Werkzeug
 - SQLite (via Python sqlite3)
 - segno (QR code generation)
-- Vanilla HTML, CSS & JavaScript
+- HTML, CSS & JavaScript
 - Git & GitHub
 - Visual Studio Code
 - PythonAnywhere (hosting)
@@ -74,7 +89,7 @@ big_project/
 │   ├── css/
 │   │   └── frames.css     # Shared stylesheet across all pages
 │   ├── images/
-│   │   └── frames_logo.svg
+│   │   └── logo.svg
 │   ├── uploads/           # Uploaded photos (auto-created on first run)
 │   ├── admin.html
 │   ├── album.html
@@ -131,7 +146,6 @@ No login required. Guests scan the QR code or follow a link, and upload one or m
 - **Dynamic QR redirects** — each album gets a permanent token (e.g. `/r/xk92pL`) that redirects to a configurable target. Printed QR codes never need reprinting even if the target changes.
 - **Filename collision prevention** — uploaded photos are prefixed with a random 6-byte hex string to prevent files with the same name overwriting each other.
 - **`PRAGMA foreign_keys = ON`** — set per connection since SQLite disables FK enforcement by default. This ensures cascade deletes work correctly.
-- **Dynamic QR redirects** — each album gets a permanent token (e.g. `/r/xk92pL`) that redirects to a configurable target. Printed QR codes never need reprinting even if the target changes.
 
 ---
 
@@ -141,6 +155,22 @@ No login required. Guests scan the QR code or follow a link, and upload one or m
 - Logo overlay on QR codes for event branding
 - Bulk photo download as a ZIP file
 - Email notification to organiser when new photos are uploaded
+- Profile Management page with user creation path 
+- Photo slideshow capability for an album for an interactive way of sharing photos with guests
+
+
+---
+ 
+## References and AI Usage
+ 
+### External Libraries
+- [Flask](https://flask.palletsprojects.com/) — web framework
+- [Werkzeug](https://werkzeug.palletsprojects.com/) — password hashing and secure filename handling
+- [segno](https://segno.readthedocs.io/) — QR code generation
+
+### AI Usage
+Claude (Anthropic) was used during development as a coding assistant — primarily for debugging, reviewing code structure, and generating boilerplate. All code was written, reviewed and understood by me (Stephen Kerr). Prompts used included things like: *"review this Flask route for security issues"*, and *"check this README for anything missing from the project brief"*.
+ 
 
 ---
 
